@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/raaj2493/production-systems/heroverse/internals/models"
 	"github.com/raaj2493/production-systems/heroverse/internals/repository"
 	"github.com/raaj2493/production-systems/heroverse/internals/services"
+	"github.com/raaj2493/production-systems/heroverse/internals/middleware"
 )
 
 type HeroHandler struct {
@@ -94,17 +94,42 @@ func (h *HeroHandler) GetAll(c *gin.Context) {
 }
 
 func (h *HeroHandler) Create(c *gin.Context) {
+	// 1. Extract authenticated user ID from Gin context (attached by Authenticate middleware)
+	userIDVal, exists := c.Get(middleware.ContextUserIDKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, APIError{
+			Code:    "UNAUTHORIZED",
+			Message: "user context missing",
+		})
+		return
+	}
+
+	userID, ok := userIDVal.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, APIError{
+			Code:    "UNAUTHORIZED",
+			Message: "invalid user context type",
+		})
+		return
+	}
+
+	// 2. Bind JSON request body to the Hero model
 	var hero models.Hero
 	if err := c.ShouldBindJSON(&hero); err != nil {
 		RespondWithError(c, services.ErrNilHeroData)
 		return
 	}
 
+	// 3. Set the owner ID BEFORE calling the service/database layer
+	hero.UserID = userID
+
+	// 4. Save hero to DB (GORM populates ID, CreatedAt, UpdatedAt)
 	if err := h.service.Create(c.Request.Context(), &hero); err != nil {
 		RespondWithError(c, err)
 		return
 	}
 
+	// 5. Return created hero with populated ID and timestamps
 	RespondWithData(c, http.StatusCreated, hero)
 }
 
@@ -127,26 +152,44 @@ func (h *HeroHandler) GetByID(c *gin.Context) {
 
 func (h *HeroHandler) Update(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil || id == 0 {
-		RespondWithError(c, services.ErrInvalidHeroID)
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, APIError{Code: "INVALID_ID", Message: "invalid hero ID"})
 		return
 	}
 
-	var hero models.Hero
-	if err := c.ShouldBindJSON(&hero); err != nil {
-		RespondWithError(c, errors.New("invalid JSON body"))
-		return
-	}
-
-	hero.ID = uint(id)
-
-	if err := h.service.Update(c.Request.Context(), &hero); err != nil {
+	// 1. Fetch existing hero from DB to check ownership
+	existingHero, err := h.service.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
 		RespondWithError(c, err)
 		return
 	}
 
-	RespondWithData(c, http.StatusOK, hero)
+	// 2. Check Ownership or Admin role
+	if !h.isOwnerOrAdmin(c, existingHero.UserID) {
+		c.JSON(http.StatusForbidden, APIError{
+			Code:    "FORBIDDEN",
+			Message: "you do not have permission to modify this hero",
+		})
+		return
+	}
+
+	// 3. Bind new fields and update
+	var updateData models.Hero
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		RespondWithError(c, services.ErrNilHeroData)
+		return
+	}
+
+	existingHero.Name = updateData.Name
+	existingHero.Power = updateData.Power
+
+	if err := h.service.Update(c.Request.Context(), existingHero); err != nil {
+		RespondWithError(c, err)
+		return
+	}
+
+	RespondWithData(c, http.StatusOK, existingHero)
 }
 
 func (h *HeroHandler) Delete(c *gin.Context) {
@@ -163,4 +206,21 @@ func (h *HeroHandler) Delete(c *gin.Context) {
 	}
 
 	RespondWithData(c, http.StatusOK, gin.H{"message": "hero deleted successfully"})
+}
+
+
+
+// Helper to verify if the authenticated user owns the resource or is an admin
+func (h *HeroHandler) isOwnerOrAdmin(c *gin.Context, ownerUserID uint) bool {
+	userIDVal, exists := c.Get(middleware.ContextUserIDKey)
+	if !exists {
+		return false
+	}
+	currentUserID, _ := userIDVal.(uint)
+
+	roleVal, _ := c.Get(middleware.ContextUserRole)
+	currentUserRole, _ := roleVal.(string)
+
+	// Admin bypass OR exact owner match
+	return currentUserRole == string(models.RoleAdmin) || currentUserID == ownerUserID
 }
