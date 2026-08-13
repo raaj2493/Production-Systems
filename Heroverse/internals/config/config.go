@@ -27,11 +27,17 @@ type DatabaseConfig struct {
 	Name     string `env:"DATABASE_NAME" envDefault:"heroverse"`
 }
 
+// JWTConfig holds secret and signing configurations for JWT tokens.
+type JWTConfig struct {
+	Secret string `env:"JWT_SECRET" envDefault:"super-secret-default-key-change-in-production"`
+}
+
 // Config is the root struct aggregating all subsystem configurations.
 type Config struct {
 	App      AppConfig
 	Server   ServerConfig
 	Database DatabaseConfig
+	JWT      JWTConfig
 }
 
 // DSN generates a formatted Data Source Name string required by PostgreSQL drivers.
@@ -44,8 +50,13 @@ func (db DatabaseConfig) DSN() string {
 
 // Validate checks for critical missing configuration values before starting the app.
 func (c *Config) Validate() error {
-	if c.Database.Password == "" && c.App.Env == "production" {
-		return fmt.Errorf("DATABASE_PASSWORD cannot be empty in production environment")
+	if c.App.Env == "production" {
+		if c.Database.Password == "" {
+			return fmt.Errorf("DATABASE_PASSWORD cannot be empty in production environment")
+		}
+		if c.JWT.Secret == "" || c.JWT.Secret == "super-secret-default-key-change-in-production" {
+			return fmt.Errorf("JWT_SECRET must be explicitly set to a strong key in production environment")
+		}
 	}
 	return nil
 }
@@ -69,8 +80,6 @@ func Load() (*Config, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("config: validation failed: %w", err)
 	}
-
-	
 
 	// Step 5: Return pointer to configured struct
 	return &cfg, nil

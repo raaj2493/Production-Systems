@@ -49,7 +49,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 	var user models.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("User not Found")
+			return nil, errors.New("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user by email %s: %w", email, err)
 	}

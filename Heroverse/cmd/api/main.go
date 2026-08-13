@@ -39,8 +39,12 @@ func main() {
 	heroService := services.NewHeroService(heroRepo)
 	heroHandler := handlers.NewHeroHandler(heroService)
 
+	userRepo := repository.NewUserRepository(db)
+	authService := services.NewAuthService(userRepo, cfg.JWT.Secret)
+	authHandler := handlers.NewAuthHandler(authService)
+
 	// 5. Initialize Router
-	engine := router.SetupRouter(cfg.App.Env, heroHandler, &handlers.AuthHandler{}, cfg.JWT.Secret)
+	engine := router.SetupRouter(cfg.App.Env, heroHandler, authHandler, cfg.JWT.Secret)
 
 	// 6. Configure & Start HTTP Server
 	server := &http.Server{

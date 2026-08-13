@@ -59,7 +59,7 @@ func(a *AuthService) Create (ctx context.Context , email string , password strin
 
 	// 5. Persist to DB
 	if err := a.userRepo.Create(ctx, user); err != nil {
-		if errors.Is(err, errors.New("User exist ")) {
+		if errors.Is(err, errors.New("user with this email already exists")) {
 			return nil, ErrEmailAlreadyExists
 		}
 		return nil, fmt.Errorf("auth_service: failed to register user: %w", err)
@@ -77,7 +77,7 @@ func(a *AuthService) Login(ctx context.Context , email , password string)(string
 
 	user , err := a.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, errors.New("user not found")) {
+		if errors.Is(err, errors.New("User not Found")) {
 			return "", nil, ErrInvalidCredentials // Prevent user enumeration
 		}
 		return "", nil, fmt.Errorf("auth_service: failed to fetch user for login: %w", err)
