@@ -30,7 +30,7 @@ func GenerateJWT (userID uint , role string , secretKey string) (string , error)
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
@@ -44,8 +44,8 @@ func GenerateJWT (userID uint , role string , secretKey string) (string , error)
 // ValidateJWT parses and verifies a signed JWT token string against the secret key.
 func ValidateJWT(tokenString string, secretKey string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Verify signing algorithm is ES256 (matches GenerateJWT)
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		// Verify signing algorithm is HMAC (HS256)
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secretKey), nil
