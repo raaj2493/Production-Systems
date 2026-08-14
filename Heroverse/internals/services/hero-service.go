@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"gorm.io/gorm"
+
 	"github.com/raaj2493/production-systems/heroverse/internals/models"
 	"github.com/raaj2493/production-systems/heroverse/internals/repository"
 )
@@ -69,6 +71,9 @@ func (s *HeroService) GetByID(ctx context.Context, id uint) (*models.Hero, error
 
 	hero, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrHeroNotFound
+		}
 		return nil, fmt.Errorf("service: failed to fetch hero: %w", err)
 	}
 
@@ -130,6 +135,9 @@ func (s *HeroService) Update(ctx context.Context, hero *models.Hero) error {
 
 	_, err := s.repo.GetByID(ctx, hero.ID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrHeroNotFound
+		}
 		return fmt.Errorf("service: hero not found for update: %w", err)
 	}
 
@@ -147,6 +155,9 @@ func (s *HeroService) Delete(ctx context.Context, id uint) error {
 
 	_, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrHeroNotFound
+		}
 		return fmt.Errorf("service: hero not found for deletion: %w", err)
 	}
 

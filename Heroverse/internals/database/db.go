@@ -12,7 +12,9 @@ import (
 func Connect(cfg *config.DatabaseConfig)(*gorm.DB , error ){
 
 	// 1. Open GORM database connection
-	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{
+		TranslateError: true,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}

@@ -28,8 +28,8 @@ func main() {
 	}
 	log.Println("Database connected successfully.")
 
-	// 3. Auto-Migrate Hero Schema
-	if err := database.Migrate(db, &models.Hero{}); err != nil {
+	// 3. Auto-Migrate Schema (Hero + User)
+	if err := database.Migrate(db, &models.Hero{}, &models.User{}); err != nil {
 		log.Fatalf("Failed to auto-migrate database: %v", err)
 	}
 	log.Println("Database schema auto-migrated successfully.")

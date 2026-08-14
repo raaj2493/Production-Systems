@@ -200,6 +200,22 @@ func (h *HeroHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// 1. Fetch existing hero from DB to check ownership
+	existingHero, err := h.service.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		RespondWithError(c, err)
+		return
+	}
+
+	// 2. Check Ownership or Admin role
+	if !h.isOwnerOrAdmin(c, existingHero.UserID) {
+		c.JSON(http.StatusForbidden, APIError{
+			Code:    "FORBIDDEN",
+			Message: "you do not have permission to delete this hero",
+		})
+		return
+	}
+
 	if err := h.service.Delete(c.Request.Context(), uint(id)); err != nil {
 		RespondWithError(c, err)
 		return
