@@ -281,6 +281,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
 
               const SizedBox(height: 22),
 
+              // Fresh Workspace Onboarding Guide (Visible when tasks and habits are empty)
+              if (todayTasks.isEmpty && todayHabits.isEmpty) ...[
+                _buildFreshWorkspaceGuideCard(context, isDark),
+                const SizedBox(height: 22),
+              ],
+
               // 2. Primary Middle Section: Today's Action Items (Placed Above Graph)
               _buildTodayActionItemsSection(
                 context: context,
@@ -383,6 +389,266 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                 _notificationBannerDismissed = true;
               });
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Fresh Workspace Onboarding Guide Card for New Users ---
+  Widget _buildFreshWorkspaceGuideCard(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B201C) : const Color(0xFFFAF9F4),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3B483D) : const Color(0xFFE2DDD3),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Badge & Title
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF33271E) : const Color(0xFFFDE8E1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.bolt_rounded, size: 20, color: Color(0xFFFF7A59)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'FRESH WORKSPACE',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.4,
+                        color: Color(0xFFFF7A59),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'Design Your Day',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Your canvas is completely fresh. You can craft your tasks and habits manually, or let ChatGPT / Gemini generate a tailored workspace in seconds.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: isDark ? Colors.white70 : const Color(0xFF5A665D),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Option 1: AI Prompt & JSON Setup
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => PromptGeneratorSheet.show(context),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF28241D) : const Color(0xFFFFF8EE),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: const Color(0xFFFFDDB3).withValues(alpha: isDark ? 0.3 : 0.8),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFDDB3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, size: 20, color: Color(0xFF5A2D00)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Generate with AI (Fastest)',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? const Color(0xFFFFDDB3) : const Color(0xFF422006),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF7A59),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                '60s',
+                                style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Copy our prompt for ChatGPT or Gemini, describe your goals, and import your custom JSON directly.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.35,
+                            color: isDark ? Colors.white60 : const Color(0xFF78350F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFFFF7A59)),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Option 2: Build Manually
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E2821) : const Color(0xFFF1F6F2),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? const Color(0xFF2E4534) : const Color(0xFFD2E8D4),
+                width: 1.2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.edit_note_rounded, size: 20, color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Build Manually',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? const Color(0xFFE2F1E4) : const Color(0xFF1B3623),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Add your priority actions and daily rituals step-by-step.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : const Color(0xFF4A554E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        icon: const Icon(Icons.add_task_rounded, size: 16),
+                        label: const Text('Add Task', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => TaskFormSheet.show(context, initialDailyTarget: true),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        icon: const Icon(Icons.repeat_rounded, size: 16),
+                        label: const Text('Add Ritual', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => HabitFormSheet.show(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Option 3: Guided Tour Link
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => InteractiveTourSheet.show(context, force: true),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+              child: Row(
+                children: [
+                  Icon(Icons.explore_outlined, size: 16, color: theme.colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Need a walkthrough? Take the 5-Step Guided Tour',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

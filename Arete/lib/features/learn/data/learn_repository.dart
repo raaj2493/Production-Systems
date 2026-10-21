@@ -26,14 +26,6 @@ class LearnRepository {
       }
     }
 
-    // Ensure curated folders exist if missing
-    final curatedCheck = Sqflite.firstIntValue(
-      await db.rawQuery("SELECT COUNT(*) FROM ${AppTables.learningCollections} WHERE id = 'folder_backend_systems'"),
-    ) ?? 0;
-    if (curatedCheck == 0) {
-      await ensureDefaultFoldersAndResources();
-    }
-
     final results = await db.rawQuery('''
       SELECT 
         c.*,
