@@ -1,0 +1,1359 @@
+{
+  "schema_version": "2.0.0",
+  "export_type": "arete_learning_import",
+  "metadata": {
+    "title": "Learning Goals, Roadmaps, Projects, and Study Preferences",
+    "description": "Consolidated learning-related information for importing into Areté. Includes learning goals, roadmaps, project-based learning, DSA progress, and study preferences.",
+    "generated_on": "2026-10-20",
+    "notes": [
+      "This is a portable learning-content format, not a claim that Areté already supports this exact schema.",
+      "Ask Antigravity to map these records into Areté's actual database models and import flow.",
+      "Roadmap content is organized for mastery and practical progression, not fixed calendar deadlines.",
+      "Some project sequences appeared in different planning conversations. The current project sequence is marked primary; older variants are retained only when useful as historical context."
+    ]
+  },
+  "profile": {
+    "primary_goal": "Become job- and industry-ready as a software engineer, with strong backend engineering, AI engineering, system design, and problem-solving skills.",
+    "target_horizon": "Approximately one year for job/industry readiness, while prioritizing mastery over rigid deadlines.",
+    "current_or_known_skills": [
+      "Java",
+      "Flutter",
+      "Dart",
+      "JavaScript",
+      "Python",
+      "SQL",
+      "Go fundamentals and beginner backend implementation",
+      "PostgreSQL and basic CRUD",
+      "Programming fundamentals"
+    ],
+    "preferred_learning_method": {
+      "style": "Hands-on, first-principles, project-based mentoring",
+      "theory_to_practice": "Approximately 20% theory and 80% implementation",
+      "workflow": [
+        "Start with a real-world problem",
+        "Build intuition and a mental model",
+        "Understand why before how",
+        "Make design decisions independently",
+        "Implement independently",
+        "Test and verify behavior",
+        "Review code and trade-offs",
+        "Break things, observe failures, diagnose, and improve"
+      ],
+      "preferences": [
+        "Build from an empty directory when appropriate",
+        "Avoid vibe coding during learning projects",
+        "Do not provide complete solutions prematurely during DSA practice",
+        "Use progressive hints and Socratic questions",
+        "Avoid multiple-choice questions for DSA",
+        "Explain complexity and dry-run solutions",
+        "Do not over-explain concepts that are already understood",
+        "Prefer real-world engineering over toy-only examples",
+        "Avoid overengineering and unnecessary abstractions",
+        "Learn by building, testing, load-testing, breaking, observing, and documenting"
+      ],
+      "preferred_hackathon_rhythm": [
+        "20–30 minutes learn",
+        "10–15 minutes decide",
+        "60–90 minutes build",
+        "Verify and review"
+      ]
+    },
+    "career_direction": {
+      "working_title": "Full Stack Software Engineer (Backend + AI Focus)",
+      "emphasis": [
+        "Backend engineering",
+        "AI engineering systems",
+        "System design",
+        "Databases",
+        "Distributed systems",
+        "Security and reliability",
+        "Cloud and DevOps fundamentals"
+      ]
+    }
+  },
+  "learning_categories": {
+    "computer_science": {
+      "title": "Computer Science Fundamentals",
+      "goals": [
+        {
+          "id": "goal-cs-fundamentals",
+          "title": "Master Computer Science Fundamentals",
+          "description": "Learn operating systems and computer networking from fundamentals through production systems and interview/system-design connections.",
+          "status": "not_started",
+          "topics": [
+            "Operating systems",
+            "Computer networking",
+            "Linux",
+            "Concurrency",
+            "Memory",
+            "Protocols",
+            "Security"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-cs-fundamentals",
+          "title": "CS Fundamentals",
+          "description": "Networking and operating systems from zero to advanced, with practical systems and interview/system-design connections.",
+          "status": "not_started",
+          "ordering": [
+            "Foundation",
+            "Core",
+            "Intermediate",
+            "Advanced",
+            "Production and Systems",
+            "Interview and System Design Connections"
+          ],
+          "phases": [
+            {
+              "title": "Operating Systems — Foundation",
+              "topics": [
+                "What an operating system does",
+                "User mode and kernel mode",
+                "Processes and threads",
+                "Program execution",
+                "System calls",
+                "Basic Linux command line"
+              ]
+            },
+            {
+              "title": "Operating Systems — Core",
+              "topics": [
+                "Process lifecycle",
+                "Thread lifecycle",
+                "CPU scheduling",
+                "Context switching",
+                "Concurrency fundamentals",
+                "Race conditions",
+                "Mutexes and semaphores",
+                "Deadlocks"
+              ]
+            },
+            {
+              "title": "Operating Systems — Intermediate",
+              "topics": [
+                "Memory management",
+                "Stack and heap",
+                "Virtual memory",
+                "Paging",
+                "Page faults",
+                "File systems",
+                "I/O",
+                "Inter-process communication"
+              ]
+            },
+            {
+              "title": "Operating Systems — Advanced and Systems",
+              "topics": [
+                "Linux process and resource inspection",
+                "Containers and namespaces",
+                "Virtualization",
+                "Resource limits",
+                "Signals",
+                "File descriptors",
+                "Performance troubleshooting"
+              ]
+            },
+            {
+              "title": "Networking — Foundation",
+              "topics": [
+                "What networks solve",
+                "IP addresses",
+                "Ports",
+                "DNS",
+                "TCP and UDP",
+                "Client-server model",
+                "Basic routing"
+              ]
+            },
+            {
+              "title": "Networking — Core",
+              "topics": [
+                "TCP connection lifecycle",
+                "HTTP request/response",
+                "HTTP methods and status codes",
+                "Headers",
+                "TLS and HTTPS",
+                "Sockets",
+                "DNS resolution"
+              ]
+            },
+            {
+              "title": "Networking — Intermediate",
+              "topics": [
+                "Connection pooling",
+                "Keep-alive",
+                "Timeouts",
+                "Retries",
+                "Proxies",
+                "Reverse proxies",
+                "Load balancing",
+                "CDNs",
+                "WebSockets"
+              ]
+            },
+            {
+              "title": "Networking — Advanced and Production",
+              "topics": [
+                "Network security",
+                "Rate limiting",
+                "Latency and throughput",
+                "Packet loss",
+                "Backpressure",
+                "Service-to-service communication",
+                "Network debugging",
+                "Observability"
+              ]
+            },
+            {
+              "title": "Interview and System Design Connections",
+              "topics": [
+                "Explain processes versus threads",
+                "Explain TCP versus UDP",
+                "Design a connection pool",
+                "Trace an HTTP request",
+                "Explain DNS and TLS in a request",
+                "Connect networking and OS concepts to scalable backend systems"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "problem_solving_and_dsa": {
+      "title": "DSA & Problem Solving",
+      "goals": [
+        {
+          "id": "goal-dsa",
+          "title": "Become an Independent DSA Problem Solver",
+          "description": "Learn data structures and algorithms from first principles, recognize patterns independently, and develop interview-level problem-solving ability without memorizing solutions.",
+          "status": "in_progress",
+          "topics": [
+            "Complexity",
+            "Arrays",
+            "Hashing",
+            "Two pointers",
+            "Sliding window",
+            "Prefix sums",
+            "Trees",
+            "Graphs",
+            "Dynamic programming",
+            "Advanced patterns"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-dsa",
+          "title": "DSA Roadmap",
+          "description": "Pattern-based DSA learning in Java, from fundamentals to interview mastery. Focus on independent reasoning, not memorization.",
+          "status": "in_progress",
+          "language": "Java",
+          "learning_rules": [
+            "Start with a brute-force solution before optimizing",
+            "Ask the learner to explain their intuition before showing code",
+            "Use open-ended Socratic questions, not MCQs",
+            "Do not reveal the final or optimal solution prematurely",
+            "Give progressive hints",
+            "Teach recognition signals for when a pattern applies",
+            "Dry-run examples and edge cases",
+            "Explain time and space complexity",
+            "Review the learner's code and reasoning",
+            "During mixed revision, do not name the pattern before the learner identifies it"
+          ],
+          "phases": [
+            {
+              "title": "Foundations",
+              "topics": [
+                "Time complexity",
+                "Space complexity",
+                "Big O",
+                "Arrays",
+                "Indexing",
+                "Traversal",
+                "Strings",
+                "Basic problem decomposition"
+              ]
+            },
+            {
+              "title": "Hashing",
+              "topics": [
+                "Hash maps",
+                "Hash sets",
+                "Frequency counting",
+                "Lookup optimization",
+                "Duplicate detection"
+              ]
+            },
+            {
+              "title": "Two Pointers",
+              "topics": [
+                "Opposite-direction pointers",
+                "Same-direction pointers",
+                "In-place modifications",
+                "Sorted-array reasoning",
+                "Palindrome checks",
+                "Pair-sum reasoning",
+                "Three-sum reasoning",
+                "Pointer movement proofs"
+              ]
+            },
+            {
+              "title": "Sliding Window",
+              "topics": [
+                "Fixed-size windows",
+                "Variable-size windows",
+                "Window invariants",
+                "Frequency maps in windows",
+                "Expand/shrink reasoning"
+              ]
+            },
+            {
+              "title": "Prefix Sum",
+              "topics": [
+                "Prefix sums",
+                "Range-sum queries",
+                "Prefix differences",
+                "Subarray sum reasoning",
+                "Prefix sums with hashing"
+              ]
+            },
+            {
+              "title": "Binary Search and Sorting",
+              "topics": [
+                "Sorting fundamentals",
+                "Binary search",
+                "Boundary search",
+                "Search on answer",
+                "Sorting-based patterns"
+              ]
+            },
+            {
+              "title": "Linked Lists",
+              "topics": [
+                "Traversal",
+                "Insertion and deletion",
+                "Fast and slow pointers",
+                "Reversal",
+                "Cycle detection",
+                "Merge operations"
+              ]
+            },
+            {
+              "title": "Stacks and Queues",
+              "topics": [
+                "Stack operations",
+                "Queue operations",
+                "Deque",
+                "Expression and bracket problems",
+                "Monotonic stack introduction"
+              ]
+            },
+            {
+              "title": "Recursion and Backtracking",
+              "topics": [
+                "Call stack",
+                "Base cases",
+                "Recursive decomposition",
+                "Subsets",
+                "Permutations",
+                "Combinations",
+                "Constraint-based search",
+                "Pruning"
+              ]
+            },
+            {
+              "title": "Trees and BSTs",
+              "topics": [
+                "Tree traversal",
+                "DFS",
+                "BFS",
+                "Height and depth",
+                "Binary search trees",
+                "Path problems",
+                "Tree construction",
+                "Lowest common ancestor"
+              ]
+            },
+            {
+              "title": "Heaps and Priority Queues",
+              "topics": [
+                "Heap properties",
+                "Top K problems",
+                "K-way merge",
+                "Scheduling problems",
+                "Priority queue trade-offs"
+              ]
+            },
+            {
+              "title": "Greedy and Intervals",
+              "topics": [
+                "Greedy choices",
+                "Proof intuition",
+                "Interval merging",
+                "Scheduling",
+                "Overlap detection"
+              ]
+            },
+            {
+              "title": "Graphs",
+              "topics": [
+                "Graph representations",
+                "BFS",
+                "DFS",
+                "Connected components",
+                "Cycle detection",
+                "Topological sorting",
+                "Union-Find",
+                "Shortest paths",
+                "Minimum spanning trees"
+              ]
+            },
+            {
+              "title": "Tries and Bit Manipulation",
+              "topics": [
+                "Trie structure",
+                "Prefix search",
+                "Bitwise operations",
+                "Bit masks",
+                "Common bit patterns"
+              ]
+            },
+            {
+              "title": "Dynamic Programming",
+              "topics": [
+                "State definition",
+                "Recurrence relations",
+                "Memoization",
+                "Tabulation",
+                "Space optimization",
+                "One-dimensional DP",
+                "Grid DP",
+                "Knapsack patterns",
+                "Subsequence DP",
+                "Advanced DP"
+              ]
+            },
+            {
+              "title": "Advanced Patterns and Mixed Revision",
+              "topics": [
+                "Monotonic structures",
+                "Advanced graph algorithms",
+                "Advanced DP",
+                "Pattern recognition",
+                "Complexity trade-offs",
+                "Mixed interview practice"
+              ]
+            }
+          ],
+          "current_progress": {
+            "known": [
+              "Java syntax",
+              "Arrays",
+              "Array indexing",
+              "Array traversal"
+            ],
+            "pattern_work": [
+              "Prefix Sum",
+              "Two Pointers",
+              "Sliding Window"
+            ],
+            "current_focus": "Two Pointers",
+            "two_pointer_practice": [
+              "Remove Duplicates",
+              "Remove Element",
+              "Move Zeroes",
+              "Valid Palindrome",
+              "Reverse String",
+              "Two Sum II",
+              "Three Sum"
+            ],
+            "learning_need": "Improve recognition signals and explain why and when two pointers apply; develop independent implementation rather than copying code.",
+            "status_note": "Progress is based on the latest remembered learning context and should be confirmed or updated during import."
+          }
+        }
+      ]
+    },
+    "backend_engineering": {
+      "title": "Backend Engineering",
+      "goals": [
+        {
+          "id": "goal-backend",
+          "title": "Build Production-Ready Backend Engineering Skills",
+          "description": "Build separate, progressively more realistic backend systems using Go and related technologies, learning architecture, persistence, APIs, security, testing, reliability, and deployment.",
+          "status": "in_progress",
+          "topics": [
+            "Go",
+            "HTTP",
+            "Gin",
+            "SQL",
+            "PostgreSQL",
+            "Authentication",
+            "Authorization",
+            "Testing",
+            "Caching",
+            "Queues",
+            "Observability",
+            "Deployment"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-backend-production-systems",
+          "title": "Backend Production Systems Roadmap",
+          "description": "A practical, project-driven path to production-ready backend engineering. Keep this roadmap separate from AI Engineering and System Design.",
+          "status": "in_progress",
+          "primary_language": "Go",
+          "preferred_stack": [
+            "Go",
+            "Gin",
+            "SQL",
+            "PostgreSQL",
+            "GORM where useful",
+            "Docker",
+            "Testing",
+            "Observability"
+          ],
+          "learning_loop": [
+            "Understand the problem",
+            "Design",
+            "Build",
+            "Test",
+            "Load-test where relevant",
+            "Break",
+            "Observe",
+            "Diagnose",
+            "Redesign",
+            "Document"
+          ],
+          "phases": [
+            {
+              "title": "Go and HTTP Foundations",
+              "topics": [
+                "Go project structure",
+                "Structs and methods",
+                "Slices and maps",
+                "Pointers",
+                "Errors",
+                "JSON",
+                "HTTP fundamentals",
+                "net/http",
+                "Gin",
+                "Request validation",
+                "HTTP error handling",
+                "Git workflow"
+              ]
+            },
+            {
+              "title": "Persistence and API Design",
+              "topics": [
+                "Relational modeling",
+                "SQL CRUD",
+                "Migrations",
+                "Transactions",
+                "API conventions",
+                "Pagination",
+                "Filtering",
+                "Validation",
+                "Error contracts"
+              ]
+            },
+            {
+              "title": "Identity and Access",
+              "topics": [
+                "Password hashing",
+                "Authentication",
+                "JWT where appropriate",
+                "Authorization",
+                "RBAC",
+                "Resource ownership",
+                "Security tests"
+              ]
+            },
+            {
+              "title": "Testing and Maintainability",
+              "topics": [
+                "Unit tests",
+                "Integration tests",
+                "Test databases",
+                "Mocks only where useful",
+                "Configuration",
+                "Logging",
+                "Code organization"
+              ]
+            },
+            {
+              "title": "Performance and Concurrency",
+              "topics": [
+                "Concurrency in Go",
+                "Goroutines",
+                "Channels",
+                "Context cancellation",
+                "Connection pooling",
+                "Caching",
+                "Redis where justified",
+                "Load testing",
+                "Backpressure"
+              ]
+            },
+            {
+              "title": "Realtime and Event-Driven Systems",
+              "topics": [
+                "WebSockets",
+                "Queues",
+                "Pub/sub",
+                "Retries",
+                "Idempotency",
+                "Outbox pattern",
+                "Event-driven workflows"
+              ]
+            },
+            {
+              "title": "Distributed Services",
+              "topics": [
+                "gRPC",
+                "API gateway",
+                "Service boundaries",
+                "Timeouts",
+                "Retries",
+                "Circuit breakers",
+                "Consistency",
+                "Failure handling"
+              ]
+            },
+            {
+              "title": "Production and Operations",
+              "topics": [
+                "Linux",
+                "Docker",
+                "CI/CD",
+                "Environment configuration",
+                "Secrets",
+                "Deployment",
+                "Monitoring",
+                "Metrics",
+                "Tracing",
+                "Reliability",
+                "Incident debugging"
+              ]
+            }
+          ],
+          "important_constraint": "Treat this as the single source of truth for backend learning. Do not merge the AI Engineering or System Design roadmaps into it."
+        }
+      ]
+    },
+    "system_design": {
+      "title": "System Design",
+      "goals": [
+        {
+          "id": "goal-system-design",
+          "title": "Master Low-Level and High-Level System Design",
+          "description": "Learn to reason about requirements, APIs, data models, component boundaries, scalability, reliability, trade-offs, and production architecture.",
+          "status": "not_started",
+          "topics": [
+            "Requirements",
+            "API design",
+            "Data modeling",
+            "LLD",
+            "HLD",
+            "Caching",
+            "Queues",
+            "Distributed systems",
+            "Reliability",
+            "Trade-offs"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-system-design",
+          "title": "System Design Study Plan",
+          "description": "Learn low-level design and high-level design with practical implementation and explicit trade-off analysis.",
+          "status": "not_started",
+          "phases": [
+            {
+              "title": "Design Fundamentals",
+              "topics": [
+                "Requirements clarification",
+                "Functional and non-functional requirements",
+                "Constraints",
+                "Estimation",
+                "Latency",
+                "Throughput",
+                "Availability",
+                "Reliability"
+              ]
+            },
+            {
+              "title": "API and Data Design",
+              "topics": [
+                "REST API design",
+                "Pagination",
+                "Idempotency",
+                "Schema design",
+                "Indexes",
+                "Transactions",
+                "Consistency",
+                "Data lifecycle"
+              ]
+            },
+            {
+              "title": "Low-Level Design",
+              "topics": [
+                "Responsibilities",
+                "Interfaces",
+                "Composition",
+                "Domain modeling",
+                "SOLID where useful",
+                "Design patterns",
+                "Error handling",
+                "Testability",
+                "Concurrency safety"
+              ]
+            },
+            {
+              "title": "Core Building Blocks",
+              "topics": [
+                "Caching",
+                "Queues",
+                "Object storage",
+                "Search",
+                "Load balancing",
+                "CDNs",
+                "Rate limiting",
+                "API gateways"
+              ]
+            },
+            {
+              "title": "High-Level Design",
+              "topics": [
+                "Monoliths and service boundaries",
+                "Replication",
+                "Partitioning",
+                "Sharding",
+                "Consistency",
+                "Event-driven architecture",
+                "Realtime systems",
+                "Distributed transactions"
+              ]
+            },
+            {
+              "title": "Reliability and Operations",
+              "topics": [
+                "Timeouts",
+                "Retries",
+                "Circuit breakers",
+                "Backpressure",
+                "Observability",
+                "Disaster recovery",
+                "Capacity planning",
+                "Security"
+              ]
+            },
+            {
+              "title": "Case Studies and Practice",
+              "topics": [
+                "URL shortener",
+                "Task management system",
+                "Chat system",
+                "Notification service",
+                "File storage",
+                "Search system",
+                "AI application architecture",
+                "Production incident analysis"
+              ]
+            }
+          ],
+          "practice_method": [
+            "Clarify requirements",
+            "Estimate scale",
+            "Design APIs and data models",
+            "Draw components and flows",
+            "Identify bottlenecks and failures",
+            "Compare alternatives",
+            "Implement a small version",
+            "Test and document trade-offs"
+          ]
+        }
+      ]
+    },
+    "ai_engineering": {
+      "title": "AI Engineering",
+      "goals": [
+        {
+          "id": "goal-ai-engineering",
+          "title": "Build Real AI Engineering Systems",
+          "description": "Move beyond basic LLM calls and build secure, evaluated, observable AI applications and infrastructure.",
+          "status": "not_started",
+          "topics": [
+            "LLM APIs",
+            "Prompting",
+            "RAG",
+            "Hybrid search",
+            "Embeddings",
+            "Agents",
+            "Workflow orchestration",
+            "Evaluation",
+            "Guardrails",
+            "AI infrastructure"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-ai-engineering-systems",
+          "title": "AI Engineering Systems Roadmap",
+          "description": "Build AI-powered software systems beyond basic prompt calls, including retrieval, agents, evaluation, security, and AI infrastructure.",
+          "status": "not_started",
+          "phases": [
+            {
+              "title": "LLM Foundations and Lab",
+              "topics": [
+                "LLM API integration",
+                "Prompt construction",
+                "Structured outputs",
+                "Context windows",
+                "Token and latency costs",
+                "Failure modes"
+              ]
+            },
+            {
+              "title": "Prompt Platform",
+              "topics": [
+                "Prompt versioning",
+                "Templates",
+                "Reusable components",
+                "Experiments",
+                "Evaluation datasets",
+                "Regression testing"
+              ]
+            },
+            {
+              "title": "AI Backend",
+              "topics": [
+                "Async requests",
+                "Streaming",
+                "Retries",
+                "Rate limits",
+                "Provider abstraction",
+                "Caching",
+                "Cost controls",
+                "Observability"
+              ]
+            },
+            {
+              "title": "Knowledge Assistant and RAG",
+              "topics": [
+                "Document ingestion",
+                "Chunking",
+                "Embeddings",
+                "Vector retrieval",
+                "Metadata filters",
+                "Reranking",
+                "Citations",
+                "Retrieval evaluation"
+              ]
+            },
+            {
+              "title": "Hybrid Search",
+              "topics": [
+                "PostgreSQL",
+                "pgvector",
+                "BM25",
+                "Dense retrieval",
+                "Sparse retrieval",
+                "Hybrid ranking",
+                "Tenant isolation",
+                "Row-level security"
+              ]
+            },
+            {
+              "title": "Agents and Tool Use",
+              "topics": [
+                "Tool calling",
+                "Schemas",
+                "Planning",
+                "State",
+                "Memory",
+                "Human approval",
+                "Guardrails",
+                "Tool security"
+              ]
+            },
+            {
+              "title": "Workflow Orchestration",
+              "topics": [
+                "Durable workflows",
+                "Retries",
+                "Timeouts",
+                "Compensation",
+                "Temporal or graph-based workflows",
+                "Long-running tasks"
+              ]
+            },
+            {
+              "title": "Multi-Agent Systems",
+              "topics": [
+                "Agent coordination",
+                "Delegation",
+                "Shared state",
+                "Communication",
+                "Failure handling",
+                "Evaluation of multi-step behavior"
+              ]
+            },
+            {
+              "title": "AI Infrastructure",
+              "topics": [
+                "AI gateway",
+                "Model routing",
+                "Semantic caching",
+                "Fallbacks",
+                "Concurrency limits",
+                "Observability",
+                "Cost and latency optimization"
+              ]
+            },
+            {
+              "title": "Coding Agent and Evaluation",
+              "topics": [
+                "Tool permissions",
+                "Repository context",
+                "Planning loops",
+                "Hooks",
+                "Memory",
+                "Sandboxing",
+                "Security",
+                "Evaluation and regression suites"
+              ]
+            }
+          ],
+          "principles": [
+            "Evaluate before optimizing",
+            "Treat model output as untrusted input",
+            "Build security and observability in from the start",
+            "Measure quality, latency, and cost",
+            "Prefer reliable workflows over unnecessary agent complexity"
+          ]
+        }
+      ]
+    },
+    "cloud_and_devops": {
+      "title": "Cloud & DevOps",
+      "goals": [
+        {
+          "id": "goal-cloud-devops",
+          "title": "Learn Practical Cloud and DevOps",
+          "description": "Gain sufficient practical capability to build, deploy, observe, and operate software without pursuing unnecessary mastery of every tool.",
+          "status": "not_started",
+          "topics": [
+            "Linux",
+            "Git",
+            "Docker",
+            "CI/CD",
+            "AWS basics",
+            "Terraform",
+            "Kubernetes basics",
+            "Observability",
+            "Reliability"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-cloud-devops",
+          "title": "Cloud and DevOps Fundamentals",
+          "description": "Learn enough infrastructure and operations to build, deploy, and operate production-inspired systems without pursuing unnecessary tool mastery.",
+          "status": "not_started",
+          "phases": [
+            {
+              "title": "Developer Foundations",
+              "topics": [
+                "Linux",
+                "Shell",
+                "Processes",
+                "Files and permissions",
+                "Networking basics",
+                "Git"
+              ]
+            },
+            {
+              "title": "Containers",
+              "topics": [
+                "Docker images",
+                "Containers",
+                "Volumes",
+                "Networks",
+                "Compose",
+                "Configuration",
+                "Secrets"
+              ]
+            },
+            {
+              "title": "CI/CD",
+              "topics": [
+                "Automated tests",
+                "Build pipelines",
+                "Artifact creation",
+                "Deployment workflows",
+                "Environment separation",
+                "Rollback basics"
+              ]
+            },
+            {
+              "title": "Cloud Fundamentals",
+              "topics": [
+                "Compute",
+                "Networking",
+                "Storage",
+                "Identity and permissions",
+                "Managed databases",
+                "Cost awareness"
+              ]
+            },
+            {
+              "title": "Infrastructure as Code",
+              "topics": [
+                "Terraform fundamentals",
+                "State",
+                "Reusable configuration",
+                "Safe changes"
+              ]
+            },
+            {
+              "title": "Orchestration and Observability",
+              "topics": [
+                "Kubernetes concepts",
+                "Deployments",
+                "Services",
+                "Configuration",
+                "Logs",
+                "Metrics",
+                "Tracing",
+                "Health checks",
+                "Reliability basics"
+              ]
+            }
+          ],
+          "constraint": "Sufficient practical competence is the goal; do not turn this into a requirement to master every cloud or DevOps tool."
+        }
+      ]
+    },
+    "database_engineering": {
+      "title": "Database Engineering",
+      "goals": [
+        {
+          "id": "goal-databases",
+          "title": "Understand Databases Professionally",
+          "description": "Move beyond CRUD into schema design, indexing, transactions, query planning, concurrency, database internals, security, and performance.",
+          "status": "not_started",
+          "topics": [
+            "Relational modeling",
+            "SQL",
+            "Indexes",
+            "Transactions",
+            "Isolation",
+            "Query plans",
+            "Connection pooling",
+            "Caching",
+            "PostgreSQL internals",
+            "Row-level security",
+            "Vector search"
+          ]
+        }
+      ],
+      "roadmaps": [
+        {
+          "id": "roadmap-database-engineering",
+          "title": "Professional Database Engineering",
+          "description": "A focused roadmap for database design, correctness, security, and performance.",
+          "status": "not_started",
+          "phases": [
+            {
+              "title": "Relational Foundations",
+              "topics": [
+                "Data modeling",
+                "Normalization",
+                "Keys and constraints",
+                "SQL joins",
+                "Aggregations"
+              ]
+            },
+            {
+              "title": "Performance",
+              "topics": [
+                "Indexes",
+                "Query plans",
+                "Selectivity",
+                "N+1 queries",
+                "Connection pooling",
+                "Benchmarking"
+              ]
+            },
+            {
+              "title": "Correctness and Concurrency",
+              "topics": [
+                "Transactions",
+                "ACID",
+                "Isolation levels",
+                "Locks",
+                "Deadlocks",
+                "Optimistic concurrency"
+              ]
+            },
+            {
+              "title": "Production PostgreSQL",
+              "topics": [
+                "Migrations",
+                "Backups",
+                "Connection management",
+                "Permissions",
+                "Row-level security",
+                "Operational monitoring"
+              ]
+            },
+            {
+              "title": "Modern Retrieval",
+              "topics": [
+                "Full-text search",
+                "BM25 concepts",
+                "Vector embeddings",
+                "pgvector",
+                "Hybrid search",
+                "Ranking and evaluation"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "project_learning": {
+    "learning_loop": [
+      "Problem definition",
+      "Requirements",
+      "Architecture and data model",
+      "Independent implementation",
+      "Tests",
+      "Load or failure testing where appropriate",
+      "Observe",
+      "Diagnose",
+      "Improve",
+      "Document"
+    ],
+    "primary_projects": [
+      {
+        "order": 1,
+        "name": "HeroVerse + TaskFlow",
+        "status": "in_progress",
+        "architecture": "Backend-first modular monolith",
+        "description": "A combined superhero domain and task-management backend used to learn Go backend engineering incrementally. Keep it as one modular monolith, not microservices.",
+        "stack": [
+          "Go",
+          "Gin",
+          "PostgreSQL",
+          "GORM",
+          "Docker at appropriate stages"
+        ],
+        "domain_areas": [
+          "Heroes",
+          "Superpowers",
+          "Teams",
+          "Users",
+          "Memberships",
+          "Authentication",
+          "Authorization",
+          "Missions",
+          "Tasks",
+          "Assignments",
+          "Statuses",
+          "Priorities where relevant to the project",
+          "Comments",
+          "Progress",
+          "Activity",
+          "Audit"
+        ],
+        "learning_focus": [
+          "Go fundamentals through implementation",
+          "HTTP and JSON",
+          "Gin routing",
+          "Validation",
+          "Error handling",
+          "Persistence",
+          "CRUD",
+          "Testing",
+          "Auth and authorization",
+          "Production backend practices"
+        ],
+        "current_progress": {
+          "completed_or_independent": [
+            "Go and Git setup",
+            "Program structure",
+            "Structs and methods",
+            "Slices",
+            "Maps and pointers",
+            "Git workflow"
+          ],
+          "practiced_or_in_progress": [
+            "Errors",
+            "JSON",
+            "HTTP basics",
+            "net/http",
+            "Gin",
+            "Health endpoint",
+            "Validation and HTTP errors"
+          ],
+          "checkpoint": "A Gin server was running on port 8080 with a root route and a /health route. The next work involved implementing and validating a hero creation request."
+        }
+      },
+      {
+        "order": 2,
+        "name": "ChatFlow",
+        "status": "planned",
+        "description": "Realtime chat and messaging system; learn WebSockets, message persistence, delivery state, and concurrency."
+      },
+      {
+        "order": 3,
+        "name": "Shortly",
+        "status": "planned",
+        "description": "URL shortener; learn API design, identifier generation, redirects, database indexes, caching, and analytics."
+      },
+      {
+        "order": 4,
+        "name": "Notification Service",
+        "status": "planned",
+        "description": "Reliable notifications; learn queues, retries, idempotency, delivery tracking, and failure handling."
+      },
+      {
+        "order": 5,
+        "name": "API Gateway",
+        "status": "planned",
+        "description": "Gateway behavior; learn routing, rate limiting, authentication integration, timeouts, and observability."
+      },
+      {
+        "order": 6,
+        "name": "gRPC Hero Service",
+        "status": "planned",
+        "description": "Service-to-service communication, protobuf contracts, deadlines, and error propagation."
+      },
+      {
+        "order": 7,
+        "name": "AI Portfolio Assistant",
+        "status": "planned",
+        "description": "An AI-backed application that introduces model integration, retrieval, tool use, evaluation, and safe backend integration."
+      },
+      {
+        "order": 8,
+        "name": "Production Infrastructure Capstone",
+        "status": "planned",
+        "description": "Bring together deployment, containers, CI/CD, configuration, monitoring, reliability, and operational documentation."
+      }
+    ],
+    "advanced_ai_systems": [
+      {
+        "name": "Pulse",
+        "status": "planned",
+        "description": "High-concurrency Go/Rust HTTP server, gateway and streaming concepts, with load testing and performance analysis."
+      },
+      {
+        "name": "Atlas",
+        "status": "planned",
+        "description": "Multi-tenant hybrid search using PostgreSQL, pgvector, BM25, retrieval evaluation, and tenant isolation/RLS."
+      },
+      {
+        "name": "FlowForge",
+        "status": "planned",
+        "description": "Event-driven and durable workflow systems using Kafka or NATS concepts, event-sourced order processing, and Temporal-style orchestration."
+      },
+      {
+        "name": "CloudForge",
+        "status": "planned",
+        "description": "Infrastructure, autoscaling, deployment, reliability, and controlled chaos/failure experiments."
+      },
+      {
+        "name": "TraceLab",
+        "status": "planned",
+        "description": "Observability, tracing, metrics, logs, cost visibility, and FinOps concepts."
+      },
+      {
+        "name": "AI Gateway and Semantic Cache",
+        "status": "planned",
+        "description": "Model routing, fallback, rate limiting, semantic caching, cost and latency controls, and evaluation."
+      }
+    ],
+    "notes": "Advanced project names and order have evolved across planning sessions. Keep these as projects within the relevant roadmap rather than merging the roadmaps themselves."
+  },
+  "areté_library": {
+    "purpose": "Represent the user's learning goals and roadmaps inside Areté's Learn feature.",
+    "resource_types": [
+      "YouTube video",
+      "YouTube playlist",
+      "Course",
+      "Documentation",
+      "Article",
+      "PDF",
+      "Book",
+      "Tutorial",
+      "Roadmap",
+      "Other"
+    ],
+    "statuses": [
+      "Not Started",
+      "In Progress",
+      "Completed"
+    ],
+    "roadmap_structure": [
+      "Roadmap",
+      "Stage or phase",
+      "Topic",
+      "Subtopic",
+      "Prerequisites",
+      "Learning resources",
+      "Practical tasks"
+    ],
+    "resource_fields": [
+      "Title",
+      "URL if applicable",
+      "Resource type",
+      "Description",
+      "Topic/category",
+      "Status",
+      "Manual progress percentage",
+      "Notes",
+      "Current topic or resource",
+      "Resume position where relevant",
+      "Code snippets",
+      "Linked practical tasks",
+      "Created and updated timestamps"
+    ],
+    "progress_rules": [
+      "Calculate roadmap progress from child topics or tasks instead of hardcoding it.",
+      "Calculate course or collection progress from its actual resources.",
+      "Allow manual progress for videos, courses, and playlists when no integration exists.",
+      "Preserve user-entered progress during import.",
+      "Keep the library functional offline; opening external links may require internet."
+    ]
+  },
+  "import_guidance": {
+    "purpose": "Instructions for Antigravity or the Areté importer when this JSON is imported.",
+    "rules": [
+      "Inspect Areté's actual database schema and import implementation before mapping this file.",
+      "Do not assume this JSON matches the app's internal schema.",
+      "Map learning_goals into goal records where appropriate.",
+      "Map roadmaps into learning roadmaps or collections, preserving phase and topic hierarchy.",
+      "Map project_based_learning projects into goals, learning paths, or practical project records according to the existing app's data model.",
+      "Map user_learning_profile and learning preferences into an optional learning profile or settings record only if the app supports it; otherwise preserve them in import metadata or notes.",
+      "Preserve stable IDs where supported. If the app generates its own IDs, maintain a source-ID mapping to avoid duplicates.",
+      "Use a database transaction or equivalent safe import process.",
+      "Validate the complete file before changing the database.",
+      "Provide an import preview with counts of goals, roadmaps, phases, topics, and projects.",
+      "Do not delete or overwrite existing Areté data silently.",
+      "If records already exist, offer a safe merge or skip-duplicates strategy when supported.",
+      "Recalculate progress from imported child records instead of trusting stale derived totals.",
+      "Report imported, skipped, and failed records clearly.",
+      "Keep all imported data on-device."
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Areté</string>
+    <string name="accessibility_service_label">Areté Focus Shield</string>
+    <string name="accessibility_service_description">Areté Focus Shield observes when distracting apps on your blocked list are brought to the foreground during an active focus session, helping you keep your word and stay in deep work. Areté never reads screen content, keystrokes, personal messages, or passwords.</string>
+</resources>
