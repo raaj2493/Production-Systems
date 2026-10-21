@@ -8,7 +8,10 @@ import '../../focus/data/focus_repository.dart';
 import '../../goals/data/goal_repository.dart';
 import '../../habits/data/habit_repository.dart';
 import '../../learn/data/learn_repository.dart';
+import '../../learn/data/learning_hub_repository.dart';
 import '../../notes/data/note_repository.dart';
+import '../../progress/data/consistency_matrix_provider.dart';
+import '../../reminders/data/reminder_providers.dart';
 import '../../tasks/data/task_repository.dart';
 
 class BackupService {
@@ -64,46 +67,55 @@ class BackupService {
 
       if (content == null || content.isEmpty) return false;
 
-      final success = await _dbService.importFromJson(content, replaceExisting: true);
+      final importResult = await _dbService.importFromJsonDetailed(content, replaceExisting: true);
 
-      if (success) {
-        // Refresh all feature providers
-        ref.invalidate(goalsProvider);
-        ref.invalidate(tasksProvider);
-        ref.invalidate(habitsProvider);
-        ref.invalidate(collectionsProvider);
-        ref.invalidate(resourcesProvider);
-        ref.invalidate(notesProvider);
-        ref.invalidate(recentFocusSessionsProvider);
-        ref.invalidate(todayFocusSecondsProvider);
+      if (importResult.success) {
+        _invalidateAllProviders(ref);
       }
 
-      return success;
+      return importResult.success;
     } catch (e) {
       debugPrint('Import backup error: $e');
       return false;
     }
   }
 
-  Future<bool> importBackupFromText(WidgetRef ref, String jsonString, {bool replaceExisting = false}) async {
+  Future<ImportResult> importBackupFromTextDetailed(WidgetRef ref, String jsonString, {bool replaceExisting = false}) async {
     try {
-      final success = await _dbService.importFromJson(jsonString, replaceExisting: replaceExisting);
-      if (success) {
-        // Invalidate all providers
-        ref.invalidate(goalsProvider);
-        ref.invalidate(tasksProvider);
-        ref.invalidate(habitsProvider);
-        ref.invalidate(collectionsProvider);
-        ref.invalidate(resourcesProvider);
-        ref.invalidate(notesProvider);
-        ref.invalidate(recentFocusSessionsProvider);
-        ref.invalidate(todayFocusSecondsProvider);
+      final result = await _dbService.importFromJsonDetailed(jsonString, replaceExisting: replaceExisting);
+      if (result.success) {
+        _invalidateAllProviders(ref);
       }
-      return success;
+      return result;
     } catch (e) {
       debugPrint('Import backup from text error: $e');
-      return false;
+      return ImportResult(success: false, error: 'Import failed: $e');
     }
+  }
+
+  Future<bool> importBackupFromText(WidgetRef ref, String jsonString, {bool replaceExisting = false}) async {
+    final result = await importBackupFromTextDetailed(ref, jsonString, replaceExisting: replaceExisting);
+    return result.success;
+  }
+
+  void _invalidateAllProviders(WidgetRef ref) {
+    ref.invalidate(goalsProvider);
+    ref.invalidate(tasksProvider);
+    ref.invalidate(habitsProvider);
+    ref.invalidate(collectionsProvider);
+    ref.invalidate(resourcesProvider);
+    ref.invalidate(notesProvider);
+    ref.invalidate(allTagsProvider);
+    ref.invalidate(recentFocusSessionsProvider);
+    ref.invalidate(todayFocusSecondsProvider);
+    ref.invalidate(todayCompletedFocusSessionsProvider);
+    ref.invalidate(consistencyMatrixProvider);
+    ref.invalidate(learningCategoriesProvider);
+    ref.invalidate(learningRoadmapsProvider);
+    ref.invalidate(dsaProblemsProvider);
+    ref.invalidate(learningProjectsProvider);
+    ref.invalidate(learningProfileProvider);
+    ref.invalidate(remindersProvider);
   }
 
   static String getStarterTemplateJson() {

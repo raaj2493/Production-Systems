@@ -104,5 +104,110 @@ void main() {
       final imported = await dbService.importFromJson(invalidJson);
       expect(imported, isFalse);
     });
+
+    test('Imports JSON wrapped in ChatGPT conversational text and markdown backticks', () async {
+      const chatGptOutput = '''
+Sure thing! Here is your personalized workspace JSON for Areté:
+
+```json
+{
+  "app": "Areté",
+  "tables": {
+    "goals": [
+      {
+        "id": "goal_ai",
+        "title": "Master Agentic AI",
+        "color": "#D2E8D4"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Build Multi-Turn ReAct Agent",
+        "is_daily_target": 1
+      }
+    ]
+  }
+}
+```
+
+Hope this helps you achieve your goals!
+''';
+
+      final result = await dbService.importFromJsonDetailed(chatGptOutput, replaceExisting: true);
+      expect(result.success, isTrue);
+      expect(result.totalCount, equals(2));
+      expect(result.tableCounts[AppTables.goals], equals(1));
+      expect(result.tableCounts[AppTables.tasks], equals(1));
+
+      final db = await dbService.database;
+      final tasks = await db.query(AppTables.tasks);
+      expect(tasks.length, equals(1));
+      expect(tasks.first['title'], equals('Build Multi-Turn ReAct Agent'));
+      expect(tasks.first['id'], isNotNull);
+      expect(tasks.first['is_daily_target'], equals(1));
+    });
+
+    test('Imports JSON with raw custom_days list and frequency alias', () async {
+      const jsonWithList = '''
+{
+  "habits": [
+    {
+      "title": "Morning Cardio",
+      "frequency": "custom",
+      "custom_days": [1, 2, 3, 4, 5],
+      "color_hex": "#FFDDB3"
+    }
+  ]
+}
+''';
+
+      final result = await dbService.importFromJsonDetailed(jsonWithList);
+      expect(result.success, isTrue);
+
+      final db = await dbService.database;
+      final habits = await db.query(AppTables.habits, where: 'title = ?', whereArgs: ['Morning Cardio']);
+      expect(habits.length, equals(1));
+      expect(habits.first['frequency_type'], equals('custom'));
+      expect(habits.first['custom_days'], equals('[1,2,3,4,5]'));
+      expect(habits.first['color'], equals('#FFDDB3'));
+    });
+
+    test('Imports JSON with dangling goal foreign key without aborting', () async {
+      const jsonWithDanglingFk = '''
+{
+  "tasks": [
+    {
+      "title": "Unlinked Task with non-existent goal",
+      "goal_id": "non_existent_goal_999",
+      "is_completed": 0
+    }
+  ]
+}
+''';
+
+      final result = await dbService.importFromJsonDetailed(jsonWithDanglingFk);
+      expect(result.success, isTrue);
+
+      final db = await dbService.database;
+      final tasks = await db.query(AppTables.tasks, where: 'title = ?', whereArgs: ['Unlinked Task with non-existent goal']);
+      expect(tasks.length, equals(1));
+    });
+
+    test('Imports JSON with trailing commas hallucinated by LLMs', () async {
+      const trailingCommaJson = '''
+{
+  "tables": {
+    "tasks": [
+      {
+        "title": "Fix JSON parser",
+      },
+    ],
+  },
+}
+''';
+
+      final result = await dbService.importFromJsonDetailed(trailingCommaJson);
+      expect(result.success, isTrue);
+    });
   });
 }

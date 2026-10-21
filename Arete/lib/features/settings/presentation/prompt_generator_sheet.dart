@@ -50,8 +50,7 @@ OUTPUT FORMAT REQUIREMENTS:
         "title": "Master Backend Systems",
         "description": "High-throughput microservices and distributed databases",
         "color": "#D2E8D4",
-        "target_date": "2026-12-31",
-        "is_completed": 0
+        "target_date": "2026-12-31"
       }
     ],
     "tasks": [
@@ -61,17 +60,15 @@ OUTPUT FORMAT REQUIREMENTS:
         "description": "Ensure deduplication with Redis cache layer",
         "goal_id": "goal_1",
         "is_completed": 0,
-        "is_daily_target": 1,
-        "priority": "High"
+        "is_daily_target": 1
       }
     ],
     "habits": [
       {
         "id": "habit_1",
         "title": "90m Deep Focus Block",
-        "frequency": "daily",
-        "target_time": "09:00",
-        "current_streak": 3
+        "frequency_type": "daily",
+        "color": "#D2E8D4"
       }
     ],
     "learning_collections": [
@@ -79,8 +76,8 @@ OUTPUT FORMAT REQUIREMENTS:
         "id": "col_1",
         "title": "Distributed Systems Mastery",
         "description": "Consensus, Raft, Paxos, and Cache Invalidation",
-        "color_hex": "#D2E8D4",
-        "icon_name": "dns_rounded"
+        "color": "#D2E8D4",
+        "icon": "dns_rounded"
       }
     ]
   }
@@ -112,6 +109,36 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
     });
   }
 
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text != null && text.trim().isNotEmpty) {
+      setState(() {
+        _jsonInputController.text = text.trim();
+        _errorMessage = null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📋 Pasted JSON from clipboard!'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Clipboard is empty or contains no text.'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _importJson(String jsonString) async {
     final text = jsonString.trim();
     if (text.isEmpty) {
@@ -125,23 +152,23 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
     });
 
     final backupService = ref.read(backupServiceProvider);
-    final success = await backupService.importBackupFromText(ref, text, replaceExisting: false);
+    final result = await backupService.importBackupFromTextDetailed(ref, text, replaceExisting: false);
 
     if (!mounted) return;
     setState(() => _isImporting = false);
 
-    if (success) {
+    if (result.success) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Personalized workspace loaded successfully!'),
-          backgroundColor: Color(0xFF2A4E35),
+        SnackBar(
+          content: Text('🎉 ${result.summary}'),
+          backgroundColor: const Color(0xFF2A4E35),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
       setState(() {
-        _errorMessage = 'Invalid JSON structure. Ensure you copy the complete JSON output.';
+        _errorMessage = result.error ?? 'Invalid JSON structure. Ensure you copy the complete JSON output.';
       });
     }
   }
@@ -308,10 +335,21 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 ),
               ),
               const SizedBox(width: 10),
-              Text(
-                'Paste Generated JSON or Load Demo',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  'Paste Generated JSON or Load Demo',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _pasteFromClipboard,
+                icon: const Icon(Icons.paste_rounded, size: 16),
+                label: const Text('Paste', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
                 ),
               ),
             ],
@@ -322,6 +360,7 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
           TextField(
             controller: _jsonInputController,
             maxLines: 5,
+            onChanged: (val) => setState(() {}),
             style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
             decoration: InputDecoration(
               hintText: 'Paste the generated JSON code block here...\n{\n  "app": "Areté",\n  "tables": { ... }\n}',
@@ -330,6 +369,17 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 fontSize: 12,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
               ),
+              suffixIcon: _jsonInputController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        setState(() {
+                          _jsonInputController.clear();
+                          _errorMessage = null;
+                        });
+                      },
+                    )
+                  : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
