@@ -1,0 +1,10 @@
+# Compiled binary
+edith
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+
+# OS artifacts
+.DS_Store
