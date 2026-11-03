@@ -94,6 +94,36 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "isXiaomiDevice" -> {
+                    result.success(
+                        Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) ||
+                            Build.BRAND.equals("Redmi", ignoreCase = true) ||
+                            Build.BRAND.equals("Xiaomi", ignoreCase = true)
+                    )
+                }
+
+                "openXiaomiAutostartSettings" -> {
+                    val intents = listOf(
+                        Intent("miui.intent.action.OP_AUTO_START").apply {
+                            setPackage("com.miui.securitycenter")
+                        },
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                    )
+                    val settingsIntent = intents.firstOrNull { it.resolveActivity(packageManager) != null }
+                    if (settingsIntent == null) {
+                        result.success(false)
+                    } else {
+                        try {
+                            startActivity(settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("SETTINGS_ERROR", e.localizedMessage, null)
+                        }
+                    }
+                }
+
                 "getInstalledApps" -> {
                     coroutineScope.launch {
                         try {
@@ -141,6 +171,12 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "setBlockedPackages" -> {
+                    val rawPackages = call.argument<List<String>>("blockedPackages") ?: emptyList()
+                    FocusShieldPreferences.setBlockedPackages(this, rawPackages.toSet())
+                    result.success(true)
+                }
+
                 "getShieldStatus" -> {
                     val isServiceEnabled = isAccessibilityServiceEnabled(this)
                     val isActive = FocusShieldPreferences.isShieldActive(this)
@@ -183,6 +219,13 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "playCustomMusic" -> {
+                    val filePath = call.argument<String>("filePath") ?: ""
+                    val volume = call.argument<Number>("volume")?.toFloat() ?: 0.6f
+                    AmbientSoundscapePlayer.playCustom(filePath, volume)
+                    result.success(true)
+                }
+
                 "stopAmbientSound" -> {
                     AmbientSoundscapePlayer.stop()
                     result.success(true)
@@ -191,6 +234,32 @@ class MainActivity : FlutterActivity() {
                 "setAmbientVolume" -> {
                     val volume = call.argument<Number>("volume")?.toFloat() ?: 0.6f
                     AmbientSoundscapePlayer.setVolume(volume)
+                    result.success(true)
+                }
+
+                "isShortFormBlockingEnabled" -> {
+                    result.success(false)
+                }
+
+                "setShortFormBlockingEnabled" -> {
+                    result.success(true)
+                }
+
+                "getQuickPassStatus" -> {
+                    result.success(
+                        mapOf(
+                            "isGranted" to false,
+                            "remainingSeconds" to 0,
+                            "blockedCount" to 0
+                        )
+                    )
+                }
+
+                "grantQuickPass" -> {
+                    result.success(true)
+                }
+
+                "clearQuickPass" -> {
                     result.success(true)
                 }
 
@@ -250,19 +319,74 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "getScreenTimeStatus" -> {
-                    val isMonitoring = ScreenTimeMonitoringService.isServiceRunning || ScreenTimePreferences.isMonitoringEnabled(this)
                     val hasUsage = isUsageStatsPermissionGranted(this)
+                    val isMonitoring = ScreenTimeMonitoringService.isServiceRunning || ScreenTimePreferences.isMonitoringEnabled(this)
+
+                    // If usage stats permission is granted, query live stats directly via ScreenTimeHelper
+                    val stats = if (hasUsage) {
+                        ScreenTimeHelper.getTodayUsageStats(this)
+                    } else {
+                        emptyMap()
+                    }
+
+                    val totalMins = (stats["totalScreenTimeMinutes"] as? Int)
+                        ?: ScreenTimeMonitoringService.latestTotalScreenTimeMinutes
+                    var currentPkg = ScreenTimeMonitoringService.currentForegroundPackage
+                    if (currentPkg.isBlank()) {
+                        currentPkg = (stats["currentPackage"] as? String) ?: ""
+                    }
+                    var currentApp = ScreenTimeMonitoringService.latestCurrentAppName
+                    if (currentApp.isBlank()) {
+                        currentApp = (stats["currentAppName"] as? String) ?: ""
+                    }
+                    val currentAppMins = if (ScreenTimeMonitoringService.latestCurrentAppMinutes > 0) {
+                        ScreenTimeMonitoringService.latestCurrentAppMinutes
+                    } else {
+                        (stats["currentAppMinutes"] as? Int) ?: 0
+                    }
+                    val category = (stats["category"] as? String)
+                        ?: ScreenTimeMonitoringService.latestCategory
+
                     result.success(
                         mapOf(
-                            "totalScreenTimeMinutes" to ScreenTimeMonitoringService.latestTotalScreenTimeMinutes,
-                            "currentPackage" to ScreenTimeMonitoringService.currentForegroundPackage,
-                            "currentAppName" to ScreenTimeMonitoringService.latestCurrentAppName,
-                            "currentAppMinutes" to ScreenTimeMonitoringService.latestCurrentAppMinutes,
-                            "category" to ScreenTimeMonitoringService.latestCategory,
+                            "totalScreenTimeMinutes" to totalMins,
+                            "currentPackage" to currentPkg,
+                            "currentAppName" to currentApp,
+                            "currentAppMinutes" to currentAppMins,
+                            "category" to category,
                             "isMonitoring" to isMonitoring,
                             "hasUsagePermission" to hasUsage
                         )
                     )
+                }
+
+                "getDigitalWellbeingStats" -> {
+                    val hasUsage = isUsageStatsPermissionGranted(this)
+                    if (hasUsage) {
+                        coroutineScope.launch {
+                            try {
+                                val stats = withContext(Dispatchers.IO) {
+                                    ScreenTimeHelper.getTodayUsageStats(this@MainActivity)
+                                }
+                                result.success(stats)
+                            } catch (e: Exception) {
+                                result.error("DIGITAL_WELLBEING_ERROR", e.localizedMessage, null)
+                            }
+                        }
+                    } else {
+                        result.success(emptyMap<String, Any>())
+                    }
+                }
+
+                "getAppUsageMap" -> {
+                    val hasUsage = isUsageStatsPermissionGranted(this)
+                    if (hasUsage) {
+                        val stats = ScreenTimeHelper.getTodayUsageStats(this)
+                        val map = stats["appUsageMinutes"] as? Map<*, *> ?: emptyMap<String, Int>()
+                        result.success(map)
+                    } else {
+                        result.success(emptyMap<String, Int>())
+                    }
                 }
 
                 "updateAppCategories" -> {
@@ -494,6 +618,37 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "showTestNotification" -> {
+                    AreteNotificationHelper.showTestNotification(this)
+                    result.success(true)
+                }
+
+                "canScheduleExactAlarms" -> {
+                    val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        (getSystemService(Context.ALARM_SERVICE) as? AlarmManager)?.canScheduleExactAlarms() ?: true
+                    } else {
+                        true
+                    }
+                    result.success(canExact)
+                }
+
+                "requestExactAlarmPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:$packageName")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("SETTINGS_ERROR", e.localizedMessage, null)
+                        }
+                    } else {
+                        result.success(true)
+                    }
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -594,6 +749,9 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(context: Context): Boolean {
+        if (FocusShieldAccessibilityService.isServiceConnected || FocusShieldAccessibilityService.instance != null) {
+            return true
+        }
         val expectedComponentName = ComponentName(context, FocusShieldAccessibilityService::class.java)
         val enabledServicesSetting = Settings.Secure.getString(
             context.contentResolver,
@@ -657,12 +815,7 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        alarmManager.setRepeating(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            AlarmManager.INTERVAL_DAY,
-            pendingIntent
-        )
+        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, calendar.timeInMillis, pendingIntent)
     }
 
     private fun cancelHabitAlarm(context: Context, id: String) {
@@ -859,27 +1012,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun scheduleAlarmSafe(alarmManager: AlarmManager, triggerAtMs: Long, pendingIntent: PendingIntent) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-                } else {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-                }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-            }
-        } catch (e: SecurityException) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-                } else {
-                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-                }
-            } catch (ignored: Exception) {}
-        }
+        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, triggerAtMs, pendingIntent)
     }
 
     override fun onResume() {

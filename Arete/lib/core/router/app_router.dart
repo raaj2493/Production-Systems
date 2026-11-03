@@ -13,6 +13,7 @@ import '../../features/notes/domain/note_model.dart';
 import '../../features/notes/presentation/note_editor_screen.dart';
 import '../../features/notes/presentation/notes_screen.dart';
 import '../../features/progress/presentation/progress_screen.dart';
+import '../../features/screentime/presentation/digital_wellbeing_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/tasks/presentation/tasks_screen.dart';
@@ -137,6 +138,11 @@ final GoRouter appRouter = GoRouter(
                   path: 'progress',
                   parentNavigatorKey: _rootNavigatorKey,
                   builder: (context, state) => const ProgressScreen(),
+                ),
+                GoRoute(
+                  path: 'wellbeing',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const DigitalWellbeingScreen(),
                 ),
                 GoRoute(
                   path: 'settings',

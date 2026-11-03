@@ -20,14 +20,19 @@ object FocusShieldPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    /**
+     * Focus Shield is ONLY active during an active Focus Session.
+     * When no session is running, this returns false so user can freely use all apps.
+     */
     fun isShieldActive(context: Context): Boolean {
         val prefs = getPrefs(context)
         val active = prefs.getBoolean(KEY_IS_ACTIVE, false)
         if (!active) return false
 
         val endTime = prefs.getLong(KEY_SESSION_END_TIME_MS, 0L)
-        if (endTime > 0 && System.currentTimeMillis() >= endTime) {
-            // Automatically deactivate expired shield
+        val now = System.currentTimeMillis()
+        if (endTime > 0 && now >= (endTime + 15000L)) {
+            // Focus session finished -> auto-deactivate so apps are freely usable again
             deactivateShield(context)
             return false
         }
@@ -44,42 +49,44 @@ object FocusShieldPreferences {
     ) {
         getPrefs(context).edit()
             .putBoolean(KEY_IS_ACTIVE, true)
-            .putStringSet(KEY_BLOCKED_PACKAGES, blockedPackages)
+            .putStringSet(KEY_BLOCKED_PACKAGES, HashSet(blockedPackages))
             .putLong(KEY_SESSION_END_TIME_MS, endTimeMs)
             .putBoolean(KEY_STRICT_MODE, strictMode)
             .putString(KEY_SESSION_LABEL, sessionLabel)
             .putString(KEY_SESSION_ID, sessionId)
             .putInt(KEY_INTERRUPTION_COUNT, 0)
-            .apply()
+            .commit()
     }
 
     fun deactivateShield(context: Context) {
         getPrefs(context).edit()
             .putBoolean(KEY_IS_ACTIVE, false)
-            .apply()
+            .putLong(KEY_SESSION_END_TIME_MS, 0L)
+            .commit()
     }
 
     fun pauseShield(context: Context) {
         getPrefs(context).edit()
             .putBoolean(KEY_IS_ACTIVE, false)
-            .apply()
+            .commit()
     }
 
     fun resumeShield(context: Context, newEndTimeMs: Long) {
         getPrefs(context).edit()
             .putBoolean(KEY_IS_ACTIVE, true)
             .putLong(KEY_SESSION_END_TIME_MS, newEndTimeMs)
-            .apply()
+            .commit()
     }
 
     fun getBlockedPackages(context: Context): Set<String> {
-        return getPrefs(context).getStringSet(KEY_BLOCKED_PACKAGES, emptySet()) ?: emptySet()
+        val raw = getPrefs(context).getStringSet(KEY_BLOCKED_PACKAGES, null)
+        return raw?.toSet() ?: emptySet()
     }
 
     fun setBlockedPackages(context: Context, packages: Set<String>) {
         getPrefs(context).edit()
-            .putStringSet(KEY_BLOCKED_PACKAGES, packages)
-            .apply()
+            .putStringSet(KEY_BLOCKED_PACKAGES, HashSet(packages))
+            .commit()
     }
 
     fun getEndTimeMs(context: Context): Long {
@@ -115,8 +122,9 @@ object FocusShieldPreferences {
         val lastTime = prefs.getLong(KEY_LAST_INTERRUPTED_TIME, 0L)
         val now = System.currentTimeMillis()
 
-        if (lastPkg == packageName && (now - lastTime) < 1800) {
-            return true // Throttle within 1.8 seconds to avoid flickering
+        // Only debounce bursts within 350ms to absorb duplicate window event packets
+        if (lastPkg == packageName && (now - lastTime) < 350L) {
+            return true
         }
 
         prefs.edit()

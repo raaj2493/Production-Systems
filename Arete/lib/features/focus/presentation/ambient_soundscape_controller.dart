@@ -1,25 +1,37 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AmbientSoundscapeState {
   final bool isPlaying;
-  final String activeSound; // 'rain', 'forest', 'white_noise', 'cafe'
+  final String activeSound; // 'rain', 'forest', 'white_noise', 'cafe', 'custom'
+  final String? customTrackPath;
+  final String? customTrackName;
   final double volume;
 
   const AmbientSoundscapeState({
     this.isPlaying = false,
     this.activeSound = 'rain',
+    this.customTrackPath,
+    this.customTrackName,
     this.volume = 0.65,
   });
+
+  bool get isCustom => activeSound == 'custom';
 
   AmbientSoundscapeState copyWith({
     bool? isPlaying,
     String? activeSound,
+    String? customTrackPath,
+    String? customTrackName,
     double? volume,
   }) {
     return AmbientSoundscapeState(
       isPlaying: isPlaying ?? this.isPlaying,
       activeSound: activeSound ?? this.activeSound,
+      customTrackPath: customTrackPath ?? this.customTrackPath,
+      customTrackName: customTrackName ?? this.customTrackName,
       volume: volume ?? this.volume,
     );
   }
@@ -33,8 +45,36 @@ class AmbientSoundscapeController extends StateNotifier<AmbientSoundscapeState> 
   Future<void> selectSoundscape(String soundType) async {
     state = state.copyWith(activeSound: soundType);
     if (state.isPlaying) {
-      await _startNativeSound(soundType, state.volume);
+      if (soundType == 'custom' && state.customTrackPath != null) {
+        await _playCustomMusic(state.customTrackPath!, state.volume);
+      } else {
+        await _startNativeSound(soundType, state.volume);
+      }
     }
+  }
+
+  Future<bool> pickCustomAudioFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg'],
+      );
+      if (result != null && result.files.single.path != null) {
+        final path = result.files.single.path!;
+        final name = result.files.single.name;
+        state = state.copyWith(
+          activeSound: 'custom',
+          customTrackPath: path,
+          customTrackName: name,
+          isPlaying: true,
+        );
+        await _playCustomMusic(path, state.volume);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('AmbientSoundscapeController: pickCustomAudioFile error: $e');
+    }
+    return false;
   }
 
   Future<void> togglePlay() async {
@@ -47,7 +87,11 @@ class AmbientSoundscapeController extends StateNotifier<AmbientSoundscapeState> 
 
   Future<void> play() async {
     state = state.copyWith(isPlaying: true);
-    await _startNativeSound(state.activeSound, state.volume);
+    if (state.activeSound == 'custom' && state.customTrackPath != null) {
+      await _playCustomMusic(state.customTrackPath!, state.volume);
+    } else {
+      await _startNativeSound(state.activeSound, state.volume);
+    }
   }
 
   Future<void> stop() async {
@@ -69,6 +113,15 @@ class AmbientSoundscapeController extends StateNotifier<AmbientSoundscapeState> 
     try {
       await _channel.invokeMethod('playAmbientSound', {
         'type': type,
+        'volume': volume,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _playCustomMusic(String filePath, double volume) async {
+    try {
+      await _channel.invokeMethod('playCustomMusic', {
+        'filePath': filePath,
         'volume': volume,
       });
     } catch (_) {}

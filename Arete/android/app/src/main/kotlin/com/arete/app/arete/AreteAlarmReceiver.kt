@@ -44,6 +44,20 @@ class AreteAlarmReceiver : BroadcastReceiver() {
 
                 if (habitId.isNotBlank()) {
                     AreteNotificationHelper.showHabitReminderNotification(context, habitId, title, duration)
+
+                    // Reschedule for next day (24 hours later)
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager
+                    if (alarmManager != null) {
+                        val reqCode = (habitId.hashCode() and 0x7FFFFFFF) % 100000 + 1000
+                        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                        } else {
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                        }
+                        val nextTrigger = System.currentTimeMillis() + (24 * 60 * 60 * 1000L)
+                        val pendingIntent = android.app.PendingIntent.getBroadcast(context, reqCode, intent, flags)
+                        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, nextTrigger, pendingIntent)
+                    }
                 }
             }
 
@@ -219,10 +233,6 @@ class AreteAlarmReceiver : BroadcastReceiver() {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT
         }
         val pendingIntent = android.app.PendingIntent.getBroadcast(context, reqCode, originalIntent, flags)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        } else {
-            alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        }
+        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, triggerAtMs, pendingIntent)
     }
 }

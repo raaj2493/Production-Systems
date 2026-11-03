@@ -102,14 +102,12 @@ class _FloatingFocusPillOverlayState extends ConsumerState<FloatingFocusPillOver
 
     final isBreak = timerState.sessionType != FocusSessionType.focus;
     final isRunning = timerState.state == TimerState.running;
+    final theme = Theme.of(context);
 
-    // Material You Dynamic Color Scheme (Warm Pastel Container, High Contrast Text)
-    // Focus Phase: #D2E8D4 (Sage) / #0F291E text
-    // Break Phase: #FFDDB3 (Warm Amber) / #2A1800 text
-    final containerColor = isBreak ? const Color(0xFFFFDDB3) : const Color(0xFFD2E8D4);
-    final textColor = isBreak ? const Color(0xFF2A1800) : const Color(0xFF0F291E);
-    final borderColor = isBreak ? const Color(0xFFF0CAA0) : const Color(0xFFB8D6BC);
-    final accentDotColor = isBreak ? const Color(0xFFFF6F00) : const Color(0xFF1B5E20);
+    final containerColor = isBreak ? theme.colorScheme.secondaryContainer : theme.colorScheme.primaryContainer;
+    final textColor = isBreak ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onPrimaryContainer;
+    final borderColor = isBreak ? theme.colorScheme.secondary.withValues(alpha: 0.3) : theme.colorScheme.primary.withValues(alpha: 0.3);
+    final accentDotColor = isBreak ? theme.colorScheme.secondary : theme.colorScheme.primary;
 
     final screenSize = MediaQuery.of(context).size;
     final padding = MediaQuery.of(context).padding;

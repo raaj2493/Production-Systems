@@ -139,6 +139,124 @@ class _NotificationPreferenceSheetState extends ConsumerState<NotificationPrefer
           error: (_, __) => const SizedBox.shrink(),
         ),
 
+        // Instant Notification Test & Verification Card
+        Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1B2A20) : const Color(0xFFE8F3EB),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFF4D7C5D).withValues(alpha: 0.4),
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4D7C5D),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Test System Notifications',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
+                        Text(
+                          'Verify heads-up banner, priority sound, and action buttons',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: AreteButton(
+                  label: 'Send Test Notification Now',
+                  variant: AreteButtonVariant.primary,
+                  icon: Icons.send_rounded,
+                  onPressed: () async {
+                    await ref.read(notificationServiceProvider).showTestNotification();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '⚡ Test notification sent! Check your notification tray.',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: const Color(0xFF2A4E35),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Exact Alarm Permission Notice (if restricted)
+        FutureBuilder<bool>(
+          future: ref.read(notificationServiceProvider).canScheduleExactAlarms(),
+          builder: (context, snapshot) {
+            final canExact = snapshot.data ?? true;
+            if (canExact) return const SizedBox.shrink();
+            return Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF332A1B) : const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.5),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.alarm_off_rounded, color: Color(0xFFD97706), size: 22),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Exact alarms restricted by system. Enable for second-precise alerts.',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.read(notificationServiceProvider).requestExactAlarmPermission(),
+                    child: const Text('Enable', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
         // ----------------------------------------------------
         // SECTION 1: FLEXIBLE RECURRING REMINDERS & INTERVAL TIMERS
         // ----------------------------------------------------

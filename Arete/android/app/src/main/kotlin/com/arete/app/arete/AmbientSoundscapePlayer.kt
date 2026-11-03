@@ -3,12 +3,15 @@ package com.arete.app.arete
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.MediaPlayer
 import java.util.Random
 
 object AmbientSoundscapePlayer {
     private var audioTrack: AudioTrack? = null
+    private var customMediaPlayer: MediaPlayer? = null
     @Volatile private var isPlaying = false
     @Volatile private var currentType: String? = null
+    @Volatile private var customAudioPath: String? = null
     @Volatile private var currentVolume = 0.6f
     private const val sampleRate = 22050
     private var workerThread: Thread? = null
@@ -59,7 +62,6 @@ object AmbientSoundscapePlayer {
                         val raw = random.nextDouble() * 2.0 - 1.0 // -1.0 to 1.0
                         val sample = when (currentType) {
                             "rain" -> {
-                                // Pink/brown filtered noise with random droplet impulses
                                 lastSample = (lastSample * 0.94) + (raw * 0.06)
                                 var s = lastSample * 2.5
                                 if (random.nextInt(1200) == 0) {
@@ -68,18 +70,16 @@ object AmbientSoundscapePlayer {
                                 s.coerceIn(-1.0, 1.0)
                             }
                             "forest" -> {
-                                // Gentle oscillating wind canopy breeze
                                 phase += 0.0003
                                 val windMod = 0.35 + 0.65 * Math.sin(phase)
                                 lastSample = (lastSample * 0.96) + (raw * 0.04)
                                 (lastSample * 2.3 * windMod).coerceIn(-1.0, 1.0)
                             }
                             "cafe" -> {
-                                // Low frequency warm chatter/rumble
                                 lastSample = (lastSample * 0.98) + (raw * 0.02)
                                 (lastSample * 3.2).coerceIn(-1.0, 1.0)
                             }
-                            else -> { // white noise
+                            else -> {
                                 raw * 0.35
                             }
                         }
@@ -99,10 +99,35 @@ object AmbientSoundscapePlayer {
     }
 
     @Synchronized
+    fun playCustom(filePath: String, volume: Float = 0.6f) {
+        stop()
+        currentVolume = volume.coerceIn(0f, 1f)
+        currentType = "custom"
+        customAudioPath = filePath
+        isPlaying = true
+
+        try {
+            customMediaPlayer = MediaPlayer().apply {
+                setDataSource(filePath)
+                isLooping = true
+                setVolume(currentVolume, currentVolume)
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            stop()
+        }
+    }
+
+    @Synchronized
     fun setVolume(volume: Float) {
         currentVolume = volume.coerceIn(0f, 1f)
         try {
             audioTrack?.setVolume(currentVolume)
+        } catch (_: Exception) {}
+        try {
+            customMediaPlayer?.setVolume(currentVolume, currentVolume)
         } catch (_: Exception) {}
     }
 
@@ -119,9 +144,17 @@ object AmbientSoundscapePlayer {
             audioTrack?.release()
         } catch (_: Exception) {}
         audioTrack = null
+
+        try {
+            customMediaPlayer?.stop()
+            customMediaPlayer?.release()
+        } catch (_: Exception) {}
+        customMediaPlayer = null
+        customAudioPath = null
         currentType = null
     }
 
     fun isPlaying(): Boolean = isPlaying
     fun getCurrentType(): String? = currentType
+    fun getCustomAudioPath(): String? = customAudioPath
 }

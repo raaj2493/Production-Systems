@@ -58,10 +58,8 @@ class AreteNotificationActionReceiver : BroadcastReceiver() {
                         flags
                     )
                     val triggerAt = System.currentTimeMillis() + 10 * 60 * 1000L
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                    } else {
-                        alarmManager?.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+                    if (alarmManager != null) {
+                        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, triggerAt, pendingIntent)
                     }
                 }
             }
@@ -101,10 +99,8 @@ class AreteNotificationActionReceiver : BroadcastReceiver() {
                         flags
                     )
                     val triggerAt = System.currentTimeMillis() + 10 * 60 * 1000L
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                    } else {
-                        alarmManager?.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+                    if (alarmManager != null) {
+                        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, triggerAt, pendingIntent)
                     }
                 }
             }
@@ -178,10 +174,8 @@ class AreteNotificationActionReceiver : BroadcastReceiver() {
                         flags
                     )
                     val triggerAt = System.currentTimeMillis() + 15 * 60 * 1000L
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        alarmManager?.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                    } else {
-                        alarmManager?.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+                    if (alarmManager != null) {
+                        AreteAlarmHelper.scheduleAlarmSafe(alarmManager, triggerAt, pendingIntent)
                     }
                 }
             }

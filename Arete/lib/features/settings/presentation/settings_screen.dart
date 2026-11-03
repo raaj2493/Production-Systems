@@ -32,8 +32,9 @@ class SettingsScreen extends ConsumerWidget {
           // Section: Appearance
           _buildSectionHeader(theme, 'Appearance'),
           AreteCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -43,8 +44,8 @@ class SettingsScreen extends ConsumerWidget {
                     settings.themeMode == ThemeMode.system
                         ? 'Follow System'
                         : settings.themeMode == ThemeMode.dark
-                            ? 'Dark Warmth'
-                            : 'Light Cream',
+                            ? 'Dark Mode'
+                            : 'Light Mode',
                   ),
                   trailing: AreteDropdownButton<ThemeMode>(
                     value: settings.themeMode,
@@ -69,6 +70,109 @@ class SettingsScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Color Palette & Accent',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    Text(
+                      _getPaletteName(settings.colorPalette),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 2.8,
+                  children: [
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'sage_coral',
+                      name: 'Sage & Coral 🌿',
+                      primaryColor: const Color(0xFF4ADE80),
+                      bgColor: const Color(0xFF0C120E),
+                      isSelected: settings.colorPalette == 'sage_coral',
+                      onTap: () => settingsNotifier.setColorPalette('sage_coral'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'sunset_terracotta',
+                      name: 'Terracotta & Oat ☕',
+                      primaryColor: const Color(0xFFE08C70),
+                      bgColor: const Color(0xFF120D0A),
+                      isSelected: settings.colorPalette == 'sunset_terracotta',
+                      onTap: () => settingsNotifier.setColorPalette('sunset_terracotta'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'sakura_blossom',
+                      name: 'Sakura & Matcha 🌸',
+                      primaryColor: const Color(0xFFE38EA3),
+                      bgColor: const Color(0xFF120D10),
+                      isSelected: settings.colorPalette == 'sakura_blossom',
+                      onTap: () => settingsNotifier.setColorPalette('sakura_blossom'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'candy_pop',
+                      name: 'Rose & Sand 🪨',
+                      primaryColor: const Color(0xFFDA8B9A),
+                      bgColor: const Color(0xFF120D0E),
+                      isSelected: settings.colorPalette == 'candy_pop',
+                      onTap: () => settingsNotifier.setColorPalette('candy_pop'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'retro_synthwave',
+                      name: 'Dusk & Lavender 🪻',
+                      primaryColor: const Color(0xFFA79FE0),
+                      bgColor: const Color(0xFF0D0C14),
+                      isSelected: settings.colorPalette == 'retro_synthwave',
+                      onTap: () => settingsNotifier.setColorPalette('retro_synthwave'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'nordic_frost',
+                      name: 'Nordic Mist ❄️',
+                      primaryColor: const Color(0xFF7CAEC9),
+                      bgColor: const Color(0xFF090E13),
+                      isSelected: settings.colorPalette == 'nordic_frost' || settings.colorPalette == 'ocean_sunrise',
+                      onTap: () => settingsNotifier.setColorPalette('nordic_frost'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'cyberpunk_neon',
+                      name: 'Matcha & Cream 🍵',
+                      primaryColor: const Color(0xFF72A868),
+                      bgColor: const Color(0xFF0A1109),
+                      isSelected: settings.colorPalette == 'cyberpunk_neon' || settings.colorPalette == 'cyber_lime',
+                      onTap: () => settingsNotifier.setColorPalette('cyberpunk_neon'),
+                    ),
+                    _buildPaletteOption(
+                      context: context,
+                      id: 'obsidian_minimal',
+                      name: 'Obsidian OLED 🖤',
+                      primaryColor: const Color(0xFFD4D4D8),
+                      bgColor: const Color(0xFF000000),
+                      isSelected: settings.colorPalette == 'obsidian_minimal',
+                      onTap: () => settingsNotifier.setColorPalette('obsidian_minimal'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ),
@@ -513,6 +617,94 @@ class SettingsScreen extends ConsumerWidget {
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  String _getPaletteName(String palette) {
+    switch (palette) {
+      case 'obsidian_minimal':
+        return 'Obsidian OLED 🖤';
+      case 'candy_pop':
+        return 'Rose & Sand 🪨';
+      case 'retro_synthwave':
+        return 'Dusk & Lavender 🪻';
+      case 'sakura_blossom':
+        return 'Sakura & Matcha 🌸';
+      case 'nordic_frost':
+      case 'ocean_sunrise':
+        return 'Nordic Mist ❄️';
+      case 'sunset_terracotta':
+      case 'caramel_latte':
+        return 'Terracotta & Oat ☕';
+      case 'cyberpunk_neon':
+      case 'cyber_lime':
+        return 'Matcha & Cream 🍵';
+      case 'sage_coral':
+      default:
+        return 'Sage & Coral 🌿';
+    }
+  }
+
+  Widget _buildPaletteOption({
+    required BuildContext context,
+    required String id,
+    required String name,
+    required Color primaryColor,
+    required Color bgColor,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: isSelected ? 1.8 : 0.8,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Dual-color circle swatch
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 1),
+                gradient: LinearGradient(
+                  colors: [bgColor, primaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, size: 14, color: theme.colorScheme.primary),
+          ],
         ),
       ),
     );

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDITH — Knowledge Engine</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Fixed Left Sidebar (260px) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-text">
+            <span class="brand-title">EDITH</span>
+            <span class="brand-tag">KNOWLEDGE ENGINE</span>
+          </div>
+        </div>
+        <button id="new-conv-btn" class="btn btn-new-conv" title="Start a new thread (⌘N)">
+          <div class="btn-new-conv-left">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Thread</span>
+          </div>
+          <kbd class="kbd-shortcut" id="kbd-new-thread">⌘N</kbd>
+        </button>
+        <button id="quick-capture-btn" class="btn btn-new-conv btn-capture" style="margin-top:6px;" title="Universal Quick Capture (⌘K)">
+          <div class="btn-new-conv-left">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>Quick Capture</span>
+          </div>
+          <kbd class="kbd-shortcut" id="kbd-capture">⌘K</kbd>
+        </button>
+      </div>
+
+      <div class="conv-list-container">
+        <div id="conv-list" class="conv-list-groups">
+          <!-- Populated dynamically grouped by time frame -->
+        </div>
+        <div id="no-convs" class="no-convs" style="display:none;">No saved threads</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="vault-info" id="vault-info" title="Authoritative Local Knowledge Base">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span id="vault-path-label" class="vault-path-text">Vault: Edith</span>
+        </div>
+        <div class="user-account-row">
+          <div class="user-account-trigger" title="Edith Engine Local Session">
+            <div class="user-avatar-mini">EE</div>
+            <div class="user-meta">
+              <span class="user-name">Knowledge Vault</span>
+              <span class="user-status">Local Engine</span>
+            </div>
+          </div>
+          <button id="clear-all-btn" class="btn-icon btn-sm btn-clear-history" title="Clear thread history (vault notes are never modified)">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Container -->
+    <main class="main-content">
+      <!-- Minimal Sticky Header Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="toggle-sidebar-btn" class="btn-icon" title="Toggle sidebar (⌘B)">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </button>
+          <h2 class="active-conv-title" id="active-conv-title">What are my current projects and learning goals?</h2>
+        </div>
+        <div class="topbar-right">
+          <div class="model-tag" id="model-tag" title="Active LLM Engine">
+            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span id="model-name">openai/gpt-oss-120b</span>
+          </div>
+          <div class="status-indicator-badge" id="status-badge">
+            <span class="status-dot status-online"></span>
+            <span class="status-label" id="status-label">Ready</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Message Viewport (Centered Reading Column, max-width 800px) -->
+      <div class="messages-container" id="messages-container">
+        <!-- Empty State with suggested prompts -->
+        <div class="welcome-screen" id="welcome-screen">
+          <div class="welcome-pill">Personal Knowledge Engine</div>
+          <h1 class="welcome-heading">What would you like to explore?</h1>
+          <p class="welcome-subtext">Edith queries your local Obsidian vault using SQLite FTS5 lexical search and graph-aware grounding to deliver verified, cited answers.</p>
+          
+          <div class="suggestion-grid">
+            <button class="suggestion-card" data-prompt="What are my current projects and learning goals?">
+              <div class="suggestion-card-header">
+                <span class="suggestion-icon">🎯</span>
+                <span class="suggestion-tag">Overview</span>
+              </div>
+              <span class="suggestion-text">What are my current projects and learning goals?</span>
+            </button>
+            <button class="suggestion-card" data-prompt="Summarize my technical roadmaps.">
+              <div class="suggestion-card-header">
+                <span class="suggestion-icon">🗺️</span>
+                <span class="suggestion-tag">Roadmaps</span>
+              </div>
+              <span class="suggestion-text">Summarize my technical roadmaps across backend and AI.</span>
+            </button>
+            <button class="suggestion-card" data-prompt="What am I currently working on, and what comes next?">
+              <div class="suggestion-card-header">
+                <span class="suggestion-icon">⚡</span>
+                <span class="suggestion-tag">Planning</span>
+              </div>
+              <span class="suggestion-text">What am I currently working on, and what comes next?</span>
+            </button>
+            <button class="suggestion-card" data-prompt="What decisions have I made about Edith?">
+              <div class="suggestion-card-header">
+                <span class="suggestion-icon">🏛️</span>
+                <span class="suggestion-tag">Architecture</span>
+              </div>
+              <span class="suggestion-text">What architecture decisions have I made about Edith?</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="messages-list" id="messages-list">
+          <!-- Messages will be injected here -->
+        </div>
+      </div>
+
+      <!-- Error Banner -->
+      <div class="error-banner" id="error-banner" style="display:none;">
+        <div class="error-content">
+          <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="error-message">An error occurred</span>
+        </div>
+        <div class="error-actions">
+          <button id="retry-btn" class="btn btn-sm btn-retry">Retry</button>
+          <button id="dismiss-error-btn" class="btn-icon btn-sm" title="Dismiss">✕</button>
+        </div>
+      </div>
+
+      <!-- Search & Input Box (Fixed Bottom Floating Bar, max-width 780px) -->
+      <div class="input-area">
+        <form class="input-form" id="chat-form">
+          <div class="input-box-wrapper">
+            <div class="input-top-row">
+              <textarea
+                id="user-input"
+                class="chat-input"
+                placeholder="Ask Edith, or share what you learned and did today to save it to your daily log..."
+                rows="1"
+                autocomplete="off"
+              ></textarea>
+            </div>
+            <div class="input-bottom-row">
+              <div class="input-left-tools">
+                <button type="button" class="btn-tool-icon" id="attach-file-btn" title="Attach file or note reference">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                  </svg>
+                </button>
+                <button type="button" class="btn-tool-icon" id="web-search-btn" title="Toggle web search (Vault grounding active)">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                </button>
+                <div class="tool-chip" title="Grounded against local Obsidian notes">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/>
+                    <path d="M9 21h6"/>
+                  </svg>
+                  <span>Obsidian Vault</span>
+                </div>
+              </div>
+              <div class="input-actions">
+                <button type="button" id="stop-btn" class="btn-stop" style="display:none;" title="Stop generation">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="5" y="5" width="14" height="14" rx="2"></rect>
+                  </svg>
+                  <span>Stop</span>
+                </button>
+                <button type="submit" id="send-btn" class="btn-send-circle" title="Send message (Enter)">
+                  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="input-footer">
+            <span class="input-privacy-note">🔒 Local Retrieval & Grounding — End-to-end encrypted</span>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- Interactive Source Detail Modal -->
+  <div id="source-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="source-id-badge" id="modal-source-id">S1</span>
+          <h3 class="modal-title" id="modal-source-title">Source Note</h3>
+        </div>
+        <button id="close-modal-btn" class="btn-icon" title="Close (Esc)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-meta-grid">
+          <div class="modal-meta-item">
+            <span class="meta-label">Path</span>
+            <code id="modal-source-path" class="meta-code">path/to/note.md</code>
+          </div>
+          <div class="modal-meta-item">
+            <span class="meta-label">Epistemic Type</span>
+            <span id="modal-source-type" class="badge-type">Fact</span>
+          </div>
+        </div>
+        <div class="modal-section-title">Grounded Vault Excerpt</div>
+        <pre class="modal-excerpt" id="modal-source-excerpt"></pre>
+      </div>
+      <div class="modal-footer">
+        <span class="modal-note">Content read-only from local vault. Note files are never modified by chat.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intelligent Quick Capture Modal -->
+  <div id="capture-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card modal-capture-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="source-id-badge" style="background:#e0f2fe; color:#0369a1;">Capture</span>
+          <h3 class="modal-title">Universal Quick Capture</h3>
+        </div>
+        <button id="close-capture-modal-btn" class="btn-icon" title="Close (Esc)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Write naturally. For a daily note, tell Edith what you learned and did; it will save under today’s date and add later updates to the same note.</p>
+        <textarea id="capture-input" class="capture-textarea" rows="5" placeholder="Today I learned…\nToday I did…\nNext I want to…"></textarea>
+        
+        <div class="capture-options-row">
+          <label class="capture-option-label" for="capture-category-select">Category:</label>
+          <select id="capture-category-select" class="capture-select">
+            <option value="">Auto-classify (Recommended)</option>
+            <option value="knowledge">Knowledge Note (03-Wiki/)</option>
+            <option value="journal">Daily Journal (12-Logs/)</option>
+            <option value="decision">Project Decision (01-Projects/)</option>
+            <option value="inbox">Inbox / Uncertain (01-Inbox/)</option>
+          </select>
+        </div>
+
+        <div id="capture-result" class="capture-result-box" style="display:none;"></div>
+      </div>
+      <div class="modal-footer capture-footer">
+        <span class="modal-note">Saved safely without overwriting existing notes.</span>
+        <button id="submit-capture-btn" class="btn btn-primary btn-submit-capture">Capture to Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification -->
+  <div id="toast" class="toast" style="display:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="toast-text">Copied to clipboard</span>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

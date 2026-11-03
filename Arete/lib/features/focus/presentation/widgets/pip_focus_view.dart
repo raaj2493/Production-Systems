@@ -64,18 +64,18 @@ class _PipFocusViewState extends ConsumerState<PipFocusView> with SingleTickerPr
     final isRunning = timerState.state == TimerState.running;
     final isBreak = timerState.sessionType != FocusSessionType.focus;
 
-    // Material 3 tonal container colors (Sage & Coral / Amber)
+    final theme = Theme.of(context);
     final capsuleBg = isBreak
-        ? const Color(0xFFFFDDB3).withValues(alpha: 0.92)
-        : const Color(0xFFD2E8D4).withValues(alpha: 0.92);
-    final textColor = isBreak ? const Color(0xFF2A1800) : const Color(0xFF0F291E);
-    final borderColor = isBreak ? const Color(0xFFF0CAA0) : const Color(0xFFB8D6BC);
-    final pulseColor = isBreak ? const Color(0xFFFF6F00) : const Color(0xFF1B5E20);
+        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.92)
+        : theme.colorScheme.primaryContainer.withValues(alpha: 0.92);
+    final textColor = isBreak ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onPrimaryContainer;
+    final borderColor = isBreak ? theme.colorScheme.secondary.withValues(alpha: 0.3) : theme.colorScheme.primary.withValues(alpha: 0.3);
+    final pulseColor = isBreak ? theme.colorScheme.secondary : theme.colorScheme.primary;
 
     final timeString = Formatters.formatSeconds(timerState.remainingSeconds);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFBF6),
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

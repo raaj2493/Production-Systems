@@ -10,6 +10,19 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
 
     <application
         android:label="Areté"
@@ -59,7 +72,11 @@
             android:exported="false"
             android:theme="@style/InterruptionTheme"
             android:launchMode="singleTask"
-            android:excludeFromRecents="true" />
+            android:taskAffinity="com.arete.app.arete.shield"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:resizeableActivity="true" />
 
         <!-- Real-Time Screen Time & Productivity Monitoring Service -->
         <service
@@ -84,12 +101,27 @@
         <!-- Notification Action Receiver (Done / Snooze / Start Focus) -->
         <receiver
             android:name=".AreteNotificationActionReceiver"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.arete.app.ACTION_HABIT_DONE" />
+                <action android:name="com.arete.app.ACTION_HABIT_SNOOZE" />
+                <action android:name="com.arete.app.ACTION_TASK_DONE" />
+                <action android:name="com.arete.app.ACTION_TASK_SNOOZE" />
+                <action android:name="com.arete.app.ACTION_REMINDER_DONE" />
+                <action android:name="com.arete.app.ACTION_REMINDER_SNOOZE" />
+                <action android:name="com.arete.app.ACTION_START_FOCUS" />
+                <action android:name="com.arete.app.ACTION_FOCUS_PAUSE" />
+                <action android:name="com.arete.app.ACTION_FOCUS_RESUME" />
+                <action android:name="com.arete.app.ACTION_FOCUS_STOP" />
+                <action android:name="com.arete.app.ACTION_FOCUS_ADD_TIME" />
+            </intent-filter>
+        </receiver>
 
         <!-- Scheduled Alarms Receiver (Habit reminders & Task due alerts & Flexible interval/fixed reminders) -->
         <receiver
             android:name=".AreteAlarmReceiver"
-            android:exported="false">
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="com.arete.app.ALARM_HABIT" />
                 <action android:name="com.arete.app.ALARM_TASK_DUE" />

@@ -1,49 +1,41 @@
-# Edith Engine — Phase 1: Knowledge Brain Only
+# Edith Engine — Personal Knowledge Engine (Phases 1–5 Complete)
 
-A local-first, lifelong personal second brain engine built in Go, inspired by [Andrej Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
+A reliable, local-first, lifelong personal knowledge engine built in Go, inspired by [Andrej Karpathy's LLM Wiki blueprint](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 
-Edith treats Markdown files in an Obsidian vault as the durable source of truth. The engine provides deterministic discovery, reading, indexing, full-text search, knowledge health checks (linting), and atomic change proposals—without any external cloud services, proprietary APIs, HTTP servers, or destructive edits.
+Edith treats Markdown files in an Obsidian vault as the durable source of truth. The engine provides deterministic discovery, reading, indexing, full-text search, knowledge maintenance (linting), atomic change proposals with conflict detection, knowledge graph queries, complete workflows (INGEST, QUERY, LINT, SYNTHESIZE, REVIEW), and a bounded context packager ready to supply grounded evidence to a future local AI layer.
 
 ---
 
 ## Table of Contents
-- [Phase 1 Scope](#phase-1-scope)
-- [Architecture & Design Principles](#architecture--design-principles)
-- [Vault and Engine Relationship](#vault-and-engine-relationship)
-- [Database Schema & Location](#database-schema--location)
-- [Building and Running the CLI](#building-and-running-the-cli)
+- [Core Principles & Product Vision](#core-principles--product-vision)
+- [Supported Workflows & Architecture](#supported-workflows--architecture)
+- [Installation & Build](#installation--build)
 - [CLI Command Reference](#cli-command-reference)
-- [Indexing & Incremental Updates](#indexing--incremental-updates)
-- [Rebuilding the Index](#rebuilding-the-index)
-- [Source File Protection & Safety](#source-file-protection--safety)
-- [Safe Change Proposals Workflow](#safe-change-proposals-workflow)
+  - [Knowledge Brain & Search](#knowledge-brain--search)
+  - [Knowledge Graph](#knowledge-graph)
+  - [Knowledge Workflows](#knowledge-workflows)
+  - [Change Proposals & Safe Revisions](#change-proposals--safe-revisions)
+- [Trust, Proposals, and Data Safety](#trust-proposals-and-data-safety)
+- [Context Packager for Future Local AI](#context-packager-for-future-local-ai)
+- [Backup and Recovery Procedures](#backup-and-recovery-procedures)
+- [Privacy and Security Boundaries](#privacy-and-security-boundaries)
 - [Running Automated Tests](#running-automated-tests)
-- [Known Limitations](#known-limitations)
-- [Roadmap (Future Phases)](#roadmap-future-phases)
+- [Recommended Next Steps for Local AI Integration](#recommended-next-steps-for-local-ai-integration)
 
 ---
 
-## Phase 1 Scope
+## Core Principles & Product Vision
 
-Phase 1 implements the core **Knowledge Brain Only**:
-- **Included**:
-  - Safe, recursive Markdown scanner with directory exclusion and symlink boundary guards.
-  - Markdown reader extracting metadata, titles, SHA-256 hashes, wikilinks (`[[...]]`), and standard links (`[...]`).
-  - SQLite metadata persistence and SQLite FTS5 full-text indexing with BM25 ranking and snippet generation.
-  - Incremental indexing skipping unchanged notes and cleaning stale entries without deleting disk files.
-  - Full-text search with query sanitization and fallback mechanics.
-  - Knowledge maintenance suite detecting broken links, orphan notes, suspicious titles, and duplicate candidates.
-  - Proposal review engine with pre-application conflict detection, recoverable backups, and atomic writes.
-  - Command-line interface with text and JSON outputs.
-- **Excluded by Design in Phase 1**:
-  - Web UI, frontend frameworks, or chatboxes.
-  - HTTP servers or Gin routing.
-  - AI SDKs, LLM model calls, or prompt chains.
-  - Vector databases, dense embeddings, or external indexing services.
+1. **Trustworthiness Over Demos**: Deterministic algorithms, explainable ranking, explicit uncertainty, and zero fabricated claims.
+2. **Local-First & Complete Privacy**: Zero telemetry, zero cloud calls, zero external transmission. Your vault never leaves your machine.
+3. **Markdown is the Source of Truth**: The Obsidian vault owns all notes. The SQLite database is an ephemeral, high-speed index that can be rebuilt from scratch at any moment.
+4. **Human Approval for Modifications**: Automated systems and external agents can only propose changes. Only an explicit user approval (`edith proposals approve <id>` or `edith review approve <id>`) can mutate a target note.
+5. **Recoverability & Non-Destruction**: Original content is archived before destructive replacement. Every restore operation is itself 100% reversible.
+6. **Model Independence**: Operates as a complete knowledge engine and context packager today without any AI model dependency.
 
 ---
 
-## Architecture & Design Principles
+## Supported Workflows & Architecture
 
 ```
                   +-----------------------------------------+
@@ -65,260 +57,447 @@ Phase 1 implements the core **Knowledge Brain Only**:
 |   +-----------------------------------------------------------+   |
 |   |                  Engine Coordinator                       |   |
 |   +-----------------------------------------------------------+   |
-|             |                                   |                 |
-|             v                                   v                 |
-|   +-------------------+               +-------------------+       |
-|   | SQLite Persistence|               | Change Proposals  |       |
-|   | Metadata & FTS5   |               | & Revision Backup |       |
-|   +-------------------+               +-------------------+       |
+|     |               |                           |           |     |
+|     v               v                           v           v     |
+|  +-----+       +---------+                 +---------+   +------+ |
+|  | FTS5|       |Knowledge|                 |Proposals|   |Contxt| |
+|  |Search       |  Graph  |                 |Revisions|   |Packgr| |
+|  +-----+       +---------+                 +---------+   +------+ |
 +-------------------------------------------------------------------+
 ```
 
-### Core Principles
-1. **Markdown is the Durable Source of Truth**: The Obsidian vault owns all notes. The SQLite database is an ephemeral, high-speed index that can be rebuilt from scratch at any moment.
-2. **Local-First and Privacy-Conscious**: Zero telemetry, zero cloud calls, zero external transmission. Vault content never leaves your machine.
-3. **Safety by Default**: Notes are never modified during scanning, indexing, searching, or linting.
-4. **Human Review for Mutations**: Automated systems can only submit proposals. Only an explicit user approval (`edith proposals approve <id>`) can mutate a target note, with atomic writes, conflict checks, and rollback history.
-
 ---
 
-## Vault and Engine Relationship
+## Installation & Build
 
-- **Obsidian Vault Path**: `~/Documents/Projects/Edith` (configurable via `--vault`).
-- **Engine Workspace**: `~/Documents/Projects/Backend/Production-Systems/Edith-Engine`.
-- **Database Location**: Outside the vault at `~/.edith/edith.db` (configurable via `--db`).
+### Requirements
+- macOS (Apple Silicon or Intel) or Linux
+- Go 1.22+
 
-The engine deliberately keeps its database and working state outside the vault to avoid cluttering your personal notes with binary files or database locks.
-
----
-
-## Database Schema & Location
-
-The engine uses SQLite with WAL (Write-Ahead Logging) mode and foreign keys enabled:
-
-### Location
-Default path: `~/.edith/edith.db`
-
-### Tables
-1. **`notes`**:
-   - `id`: Auto-incrementing primary key.
-   - `rel_path`: Vault-relative path (e.g. `00-System/Edith-Protocol.md`, UNIQUE).
-   - `title`: Extracted note title.
-   - `mod_time_unix`: File modification timestamp.
-   - `content_hash`: SHA-256 hash of raw note content.
-   - `size_bytes`: File size on disk.
-   - `indexed_at_unix`: Timestamp of last indexing.
-   - `status`: Index status (`indexed`, `failed`).
-2. **`notes_fts`** (SQLite FTS5 Virtual Table):
-   - `rel_path`: Unindexed path token.
-   - `title`: Weighted note title (higher BM25 priority).
-   - `content`: Full note Markdown body.
-   - Tokenizer: `unicode61 remove_diacritics 1`.
-3. **`activity_log`**:
-   - Audit trail of engine actions (`scan`, `index`, `reindex`, `search`, `lint`, `proposal_create`, etc.).
-   - Records counts and summary details without logging raw note contents.
-4. **`proposals`**:
-   - `id`: Unique proposal identifier (e.g., `prop-YYYYMMDDHHMMSS-xxxx`).
-   - `target_path`: Vault-relative target note.
-   - `target_hash`: SHA-256 hash of target file at proposal creation time.
-   - `reason`: Rationale for proposed update.
-   - `source_paths`: JSON list of provenance notes or raw sources.
-   - `proposed_content`: Complete candidate content.
-   - `status`: `pending`, `approved`, `rejected`.
-   - `created_at_unix`, `reviewed_at_unix`, `review_notes`.
-5. **`proposal_revisions`**:
-   - Recoverable backup snapshots of original note content and hashes before approved changes are applied.
-
----
-
-## Building and Running the CLI
-
-### Prerequisites
-- macOS / Linux with Go installed (`go1.25` or higher).
-
-### Build Standalone Binary
+### Build
+From the repository root:
 ```bash
-# In the engine directory:
-go build -buildvcs=false -o edith .
+go build -buildvcs=false -o edith main.go
 ```
 
-### Run Directly with `go run`
+Verify installation:
 ```bash
-go run . help
+./edith help
 ```
 
 ---
 
 ## CLI Command Reference
 
-All commands support `--vault <path>`, `--db <path>`, and `--json`.
+### Global Flags
+Available on all commands:
+- `--vault <path>`: Path to Obsidian vault (default: `~/Documents/Projects/Edith`)
+- `--db <path>`: Path to SQLite database (default: `~/.edith/edith.db`)
+- `--json`: Output results formatted as JSON
+- `-v`: Enable verbose logging
 
-### 1. `scan`
-Discovers eligible Markdown notes and reports synchronization counts against the database:
+---
+
+### Knowledge Brain & Search
+
+#### 1. Scan Vault
+Discovers eligible Markdown notes and reports discovered, unindexed, and modified counts:
 ```bash
 ./edith scan
-# Or in JSON format:
-./edith scan --json
 ```
 
-### 2. `index`
-Performs an incremental index run:
+#### 2. Incremental Index
+Indexes newly added or modified notes into SQLite, FTS5, and the Knowledge Graph:
 ```bash
 ./edith index
 ```
-- New files: Parsed and added to metadata and FTS5.
-- Changed files: Re-parsed and updated in metadata and FTS5.
-- Unchanged files: Skipped in sub-millisecond checks.
-- Deleted files: Stale index entries cleaned without touching disk.
 
-### 3. `reindex`
-Wipes the SQLite index and rebuilds all metadata and FTS5 data from vault Markdown:
+#### 3. Full Reindex
+Rebuilds SQLite metadata, FTS5 full-text tables, and Knowledge Graph from scratch:
 ```bash
 ./edith reindex
 ```
 
-### 4. `search <query>`
-Executes local full-text search with BM25 ranking and keyword excerpts:
+#### 4. Search
+Full-text search with BM25 relevance ranking and excerpts:
 ```bash
-./edith search "Karpathy"
-./edith search "durable knowledge store"
-./edith search --json "protocol"
+# Lexical search
+./edith search "distributed consensus"
+
+# Pre-search freshness check (warns if direct edits occurred in Obsidian)
+./edith search --fresh "architecture"
+
+# Relationship-aware search (includes connected notes with explainable reasons)
+./edith search --graph "superposition"
+
+# Output as JSON
+./edith --json search "pipeline"
 ```
 
-### 5. `read <relative-path>`
-Safely displays a note's content, title, modification timestamp, content hash, and detected links:
+#### 5. Read Note
+Safely reads and displays note content and parsed metadata without modification:
 ```bash
-./edith read "00-System/Edith-Architecture.md"
+./edith read "00-System/Edith-Protocol.md"
 ```
 
-### 6. `status`
-Displays runtime metrics, vault path, database file size, note count, and recent activity:
+#### 6. Status
+Reports vault statistics, database size, last index time, and recent activity:
 ```bash
 ./edith status
-./edith status --json
 ```
 
-### 7. `lint`
-Runs deterministic knowledge maintenance diagnostics:
+#### 7. Lint
+Performs deterministic health checks across vault notes, graph links, and proposals:
 ```bash
 ./edith lint
 ```
 Checks performed:
-- Broken internal wikilinks (`[[target]]`) and relative Markdown links.
-- Orphan notes (notes with zero inbound links).
-- Missing or suspicious titles (untitled or generic names).
-- Candidate duplicate notes (exact SHA-256 match or identical titles).
-- Missing source references in wiki pages (`03-Wiki/`).
-- Stale database entries and unindexed/modified notes.
+- Broken internal wikilinks
+- Orphan notes (notes without incoming links)
+- Missing or generic titles
+- Duplicate content or suspiciously similar titles
+- Missing source references in wiki notes
+- Stale index entries and unindexed disk modifications
+- Invalid source references
+- Proposal integrity (pending proposals whose target note was modified or deleted on disk)
+- Conservative contradiction detection (active vs deprecated notes sharing the same topic)
 
-### 8. `proposals`
-Reviews, manages, and executes change proposals:
+---
+
+### Knowledge Graph
+
+#### Outgoing Links
+Lists all links originating from a note:
+```bash
+./edith graph links "03-Wiki/Engineering-Standards.md"
+```
+
+#### Backlinks
+Lists all notes linking to the target note:
+```bash
+./edith graph backlinks "00-System/Edith-Protocol.md"
+```
+
+#### Orphan Notes
+Lists all notes with zero incoming links:
+```bash
+./edith graph orphans
+```
+
+#### Broken Links
+Lists all links whose targets cannot be resolved to an existing note:
+```bash
+./edith graph broken
+```
+
+#### Shortest Path
+Finds the shortest directed path between two notes using cycle-safe BFS:
+```bash
+./edith graph path "README.md" "03-Wiki/Distributed-Consensus.md"
+```
+
+#### Graph Traversal
+Traverses the knowledge graph up to N hops (cycle-safe):
+```bash
+./edith graph traverse "README.md" --depth 2 --nodes 50
+```
+
+---
+
+### Knowledge Workflows
+
+#### 1. INGEST
+Ingests an external source file or text safely, computes SHA-256 hash, checks for duplicates, extracts metadata, discovers relevant existing notes in the vault, preserves the raw artifact in the database, and stages a reviewable proposal:
+```bash
+# Ingest local file
+./edith ingest ./papers/raft-consensus.md --title "Raft Consensus Protocol" --author "Ongaro & Ousterhout"
+
+# Ingest raw text
+./edith ingest "Key architecture notes from design review." --title "Design Review Notes"
+```
+
+#### 2. QUERY
+Deterministic knowledge-retrieval pipeline combining lexical search and graph proximity with explainable inclusion reasons:
+```bash
+./edith query "What are the rules of engagement?" --graph --limit 5
+```
+
+#### 3. SYNTHESIZE
+Gathers multi-source evidence, preserves complete provenance citations, detects direct textual disagreements, and produces a structured outline:
+```bash
+# Synthesize topic and stage review proposal
+./edith synthesize "Distributed Consensus" --propose
+
+# Synthesize explicit notes
+./edith synthesize "Architecture Comparison" --notes "03-Wiki/Raft.md,03-Wiki/Paxos.md"
+```
+
+#### 4. REVIEW
+Unified workflow for reviewing change proposals, inspecting diffs and hashes, safely approving, rejecting, and restoring revisions:
 ```bash
 # List pending proposals
-./edith proposals list
+./edith review list
 
-# List all proposals (including approved and rejected)
-./edith proposals list --all
+# Inspect proposal details, target hash, and rationale
+./edith review inspect <proposal-id>
 
-# Review and approve a proposal (applies change safely with backup)
-./edith proposals approve <proposal-id> "Approved by user"
+# Approve and apply to vault (with pre-change backup snapshot)
+./edith review approve <proposal-id> "Approved by user"
 
-# Reject a proposal (never modifies disk)
-./edith proposals reject <proposal-id> "Not needed"
+# Reject proposal (leaves target file completely unmodified)
+./edith review reject <proposal-id> "Not needed"
 
-# Create a change proposal manually
-./edith proposals create "03-Wiki/Topic.md" "Add reference" "# New Content"
+# Inspect revision history
+./edith review history [optional-target-path]
+
+# Restore a prior revision snapshot safely
+./edith review restore <revision-id> "Revert unwanted change"
 ```
 
 ---
 
-## Indexing & Incremental Updates
+### Context Packager for Future Local AI
 
-Incremental indexing ensures sub-second updates regardless of vault size:
-1. The scanner walks the vault and computes vault-relative paths.
-2. The engine loads indexed records from SQLite (`rel_path -> {mod_time, content_hash}`).
-3. For each file, the engine checks:
-   - Does `mod_time` and `content_hash` match the database? If yes, it is flagged as **unchanged** and FTS reprocessing is skipped.
-   - Has the content or timestamp changed? If yes, it is re-parsed and updated atomically in both `notes` and `notes_fts`.
-   - Is it a new file? It is indexed into `notes` and `notes_fts`.
-4. Any database records whose files no longer exist on disk are removed from the index.
+Assembles grounded, trustworthy evidence into a bounded context package ready for local AI consumption:
+```bash
+# Text representation
+./edith context "How have our distributed systems priorities evolved?" --bytes 16384 --depth 1 --graph
+
+# JSON output for local model pipelines
+./edith --json context "Database architecture" --bytes 32768
+```
+
+#### Context Package Features:
+- **Versioned Schema (`1.0.0`)**: Structured JSON containing request ID, query, settings, evidence items, and conflict groups.
+- **Strict Byte Budget**: Enforces configured context size limit (in UTF-8 bytes). Explicitly logs any excluded or truncated items.
+- **Epistemic Classifications**: Classifies items into `original_source`, `wiki_note`, `user_interpretation`, `plan`, `conflict`, and `unknown`.
+- **Conflict Groups**: Preserves explicit contradictions and disagreements rather than discarding conflicting evidence.
+- **Path Confinement**: Prevents vault directory escape.
 
 ---
 
-## Rebuilding the Index
+## Trust, Proposals, and Data Safety
 
-If you ever delete, corrupt, or relocate your SQLite database:
+Edith enforces strict safety guarantees to protect your knowledge:
+
+1. **Per-Target Concurrency Lock**: A `sync.Mutex` lock per target file prevents concurrent approval race conditions.
+2. **Pre-Application Conflict Check**: Verifies that the target file still exists and its current SHA-256 hash matches the baseline hash observed at proposal creation. If the file was modified in Obsidian, the proposal is blocked and marked `conflict`.
+3. **Atomic Writes**: Writes are executed using temporary files in the same directory, followed by `fsync` and atomic rename.
+4. **Pre-Change Snapshot Archive**: Before overwriting any file, the original content and hash are archived in `proposal_revisions`.
+5. **Reversible Rollback**: Restoring a revision via `edith proposals restore <id>` or `edith review restore <id>` captures a new pre-restoration snapshot, making rollback itself 100% reversible.
+6. **Safe Rejections**: Rejecting a proposal never alters disk files.
+
+---
+
+## Backup and Recovery Procedures
+
+### 1. Obsidian Vault Backup
+Your Obsidian vault (`~/Documents/Projects/Edith`) contains standard Markdown files. You can back it up using git, Time Machine, or any standard directory backup tool.
+
+### 2. Database Rebuild Procedure
+The SQLite database (`~/.edith/edith.db`) can be completely reconstructed from the vault at any time:
 ```bash
+# Delete corrupt or stale database
+rm ~/.edith/edith.db
+
+# Rebuild complete metadata, FTS5 index, and knowledge graph
 ./edith reindex
 ```
-The entire index is reconstructed directly from your Markdown notes in seconds.
+
+### 3. Restoring an Overwritten Note
+If an approved proposal or synthesis note needs to be rolled back:
+```bash
+# 1. View archived revisions for the target note
+./edith review history "03-Wiki/Architecture.md"
+
+# 2. Restore the desired revision ID
+./edith review restore 3 "Restoring baseline architecture"
+```
 
 ---
 
-## Source File Protection & Safety
+## Privacy and Security Boundaries
 
-Edith enforces rigorous filesystem safety guards:
-- **No Path Traversal**: Every path is checked using `filepath.Clean` and normalized to prevent `..` escaping the vault.
-- **Symlink Boundary Checks**: Symlinks pointing outside the vault root are ignored with a safety warning. Circular symlinks are blocked.
-- **Hidden Directory Exclusions**: `.obsidian`, `.git`, `.trash`, `node_modules`, and hidden dot-directories are skipped.
-- **Read-Only Standard Operations**: `scan`, `index`, `reindex`, `search`, `read`, `status`, and `lint` never write to or modify your Markdown files.
-
----
-
-## Safe Change Proposals Workflow
-
-When automated agents or workflows wish to propose updates to your knowledge base:
-1. **Proposal Staging**: The proposal records target note path, the baseline `target_hash` on disk, reason, provenance sources, and proposed content.
-2. **Conflict Prevention**: When `edith proposals approve <id>` is executed, the engine computes the live SHA-256 hash of the target note on disk. If the note was modified since proposal creation, approval is **aborted with a conflict error** to prevent overwriting user edits.
-3. **Automatic Revision Archival**: Before writing, the existing content and hash are backed up to the `proposal_revisions` table.
-4. **Atomic Write**: The update is written to a temporary file in the target directory, synced to disk, and renamed atomically over the target note.
-5. **Re-Indexing**: The updated note is immediately reindexed in SQLite and FTS5.
+- **Zero External Network Calls**: Edith never connects to the internet, cloud APIs, or external telemetry endpoints.
+- **Path Traversal Guards**: All user-supplied paths are validated with `filepath.Clean` and checked against escaping the configured vault root.
+- **Symlink Confinement**: Symlinks pointing outside the vault root are ignored.
+- **File Mutation Scoping**: Only `edith proposals approve`, `edith review approve`, and `edith review restore` can write to disk. All other commands are strictly read-only.
 
 ---
 
 ## Running Automated Tests
 
-All tests run in isolated temporary directories with in-memory or temporary SQLite databases. Tests never touch your real vault.
-
+Run the complete test suite:
 ```bash
-# Run all tests with verbose output
-go test -v ./...
-
-# Run all tests without cache
 go test -count=1 ./...
+```
 
-# Run static analysis
+Run tests with race detection:
+```bash
+go test -race ./...
+```
+
+Verify formatting and linting:
+```bash
 go vet ./...
-
-# Verify code formatting
 gofmt -l .
 ```
 
 ---
 
-## Known Limitations
+## Edith Chat — Groq-Powered Conversational Assistant
 
-- **FTS5 Stopwords & Stemming**: FTS5 uses SQLite's `unicode61` tokenizer. Specialized technical identifiers with underscores or hyphens are treated as individual tokens unless quoted in search.
-- **Headings Anchors in Wikilinks**: Wikilinks with section anchors (`[[Note#Heading]]`) are validated against note existence; individual heading existence inside the target note is not strictly enforced in Phase 1.
-- **Single-Writer Database**: SQLite operates with WAL mode for concurrency, but concurrent multi-process writes are managed via busy timeouts.
+Edith Chat provides a fast, minimal, local web interface where you can have natural, grounded conversations with your personal Obsidian knowledge base.
 
----
+Instead of hallucinating answers or giving generic responses, Edith retrieves relevant evidence from your vault notes, maps sources to synthetic identifiers (`[S1]`, `[S2]`), and prompts Groq (`llama-3.3-70b-versatile` by default) to generate answers grounded strictly in the supplied excerpts.
 
-## Roadmap (Future Phases)
+### 1. Getting a Groq API Key
+1. Go to the official Groq Console: [https://console.groq.com/keys](https://console.groq.com/keys).
+2. Sign in and create an API key.
+3. Keep this key confidential. **Never** commit it to Git, paste it into source code, or share it.
 
-The knowledge brain built in Phase 1 serves as the modular foundation for upcoming phases:
+### 2. Setting Configuration in a `.env` File (Recommended)
+You do not need to export your API key into your terminal. Simply create a `.env` file in the project root:
 
-### Phase 2: Retrieval Improvements & Knowledge-Query Preparation
-- Hybrid ranking: BM25 score combined with link graph centrality (inbound link weights).
-- Multi-hop traversal: Graph query utility discovering notes connected within 1 to 2 hops of search hits.
-- Context window packager: Assembling compact evidence passages with note headings and provenance for downstream reasoning.
+```bash
+cp .env.example .env
+```
 
-### Phase 3: Optional Local AI Integration & Evidence-Grounded Responses
-- Pluggable local LLM runner (e.g., Ollama or local inference server).
-- Strict evidence grounding: AI responses must cite exact note paths and excerpts retrieved by Phase 1/2 search.
-- Autonomous proposal generator: Generating structured change proposals (`edith proposals create`) from new source ingestion without touching the vault directly.
+Open `.env` and paste your key:
+```bash
+GROQ_API_KEY=gsk_your_actual_key_here
+```
 
-### Phase 4: Chat Interface & User-Facing Experience
-- Lightweight browser-based chatbox interface (HTML/CSS/Vanilla JS) connected to a local Go API.
-- Live review dashboard for inspecting and approving pending proposals.
-- Interactive knowledge graph visualizer and maintenance monitor.
+Edith automatically reads `.env` on startup (as well as `~/.edith/.env`). `.env` is already configured in `.gitignore` so your secrets will never be committed.
+
+#### Optional Environment Configuration:
+```bash
+# Optional model choice (default: llama-3.3-70b-versatile)
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Optional server address (default: 127.0.0.1:8080)
+EDITH_ADDR=127.0.0.1:8080
+
+# Optional evidence budget (default: 16384 bytes)
+EDITH_MAX_CONTEXT_BYTES=16384
+```
+
+*(Alternatively, you can still export `GROQ_API_KEY` directly in your terminal shell, or pass a custom file with `./edith chat --env /path/to/.env`).*
+
+### 3. Starting Edith Chat
+Start the local server:
+```bash
+./edith chat
+```
+
+Once the chat page is open, just write a daily update in plain language. Start with
+“Today I learned…”, “Today I learnt…”, “Today I did…”, or “What I learned today…”.
+Edith saves it immediately in `12-Logs/YYYY-MM-DD.md`; later daily updates are
+appended to that date’s note. For clearer sections, use lines such as:
+
+```text
+Today I learned: how SQLite WAL checkpoints work.
+Today I did: finished the Edith capture workflow.
+Next: review the search results.
+```
+
+The vault defaults to `~/Documents/Projects/Edith`. Book captures are stored as
+one Markdown file per chapter under `08-Resources/Books/<book>/`, with numbered
+filenames so chapters stay in order. The book’s `<book>.md` note contains the
+full content of every chapter, with links to each standalone chapter file. The
+Quick Capture button and `⌘K` shortcut remain available for other kinds of notes.
+
+To add a chapter in chat, start the message with the book and chapter, then paste
+your notes. For example:
+
+```text
+Ingest Chapter 3 from The Psychology of Money
+
+## Chapter 3: Never Enough
+[your notes]
+```
+
+### Automatic Obsidian Web Clipper processing
+
+Set your Obsidian Web Clipper template's **Folder** to `Clippings` (the Obsidian
+default). While `./edith chat` is running with `GROQ_API_KEY` configured, Edith
+watches that folder and `02-Raw-Sources/Web-Clips`, waits until each Markdown
+clip has finished saving, and files its original under `02-Raw-Sources/` by
+type (`Videos`, `Articles`, `Books`, or `PDFs`). Separately, it creates
+comprehensive, bullet-based Groq notes under the top-level `Processed/` folder,
+with matching category folders and links back to each raw source. Long clips
+are processed in segments so later material is included too. Existing
+processed clips are skipped. Configure an additional inbox with
+`EDITH_CLIPPER_INBOX` or change the processed-notes base folder with
+`EDITH_CLIPPER_OUTPUT` in `.env` (paths are relative to the vault).
+
+For YouTube clips, Edith uses `yt-dlp` when available to fetch subtitle tracks
+only (no video/audio download), then asks Groq to create transcript-grounded
+summaries, timestamped pointers, and takeaways. If captions are unavailable or
+blocked, the note states that it only had the clipped title/description rather
+than presenting that limited text as a full-video summary. On macOS, install the
+optional caption helper with `brew install yt-dlp`.
+
+Or configure parameters directly via CLI flags:
+```bash
+./edith chat --addr 127.0.0.1:8080 --model llama-3.3-70b-versatile --bytes 16384
+```
+
+### 4. Opening the Web Interface
+Once started, open your browser to:
+```
+http://127.0.0.1:8080
+```
+
+### 5. Verifying Server Readiness
+You can verify backend status at any time without exposing secrets:
+```bash
+curl -s http://127.0.0.1:8080/api/v1/status | jq .
+```
+Expected output:
+```json
+{
+  "ready": true,
+  "groq_configured": true,
+  "model": "llama-3.3-70b-versatile",
+  "vault_path": "/Users/raajgiri/Documents/Projects/Edith",
+  "conversations_count": 1
+}
+```
+
+### 6. Grounded Answers and Citation Integrity
+When you ask a question (such as *"What am I currently learning?"* or *"Explain our consensus safety strategy"*):
+- Edith searches your vault notes using full-text search and knowledge graph traversal.
+- Selected excerpts are packaged into a bounded context package with synthetic identifiers (`[S1]`, `[S2]`).
+- Excerpts are wrapped in `<evidence id="S1">` tags with explicit prompt-injection defenses.
+- Groq generates an answer referencing only the supplied evidence with bracketed citations (e.g. `[S1]`).
+- The backend validates citations against the evidence actually supplied. Unsupplied or hallucinated IDs are stripped.
+- In the chatbox UI, citations appear as clickable badges that open the source note path, title, and exact excerpt.
+- If no evidence matches your question, Edith displays an explicit, honest notice: *"⚠️ Insufficient Vault Evidence: No matching notes were found in your vault."*
+
+### 7. Stopping the Server
+Press `Ctrl+C` in the terminal to trigger a graceful shutdown. Active connections finish and the database connection closes cleanly.
+
+### 8. Data Boundaries & Privacy
+- **Vault and SQLite database remain 100% local.**
+- **What is sent to Groq:** Only the current user question, minimal system instructions, and the explicitly selected, bounded excerpts retrieved for that question.
+- **What is NEVER sent:** The full vault, unselected notes, full database, API keys, private system credentials, or full past conversation transcripts.
+- Transmission to Groq is subject to Groq's official API data-handling terms.
+
+### 9. Managing Conversation History
+- Conversations and messages are persisted locally in SQLite (`~/.edith/edith.db`, Migration 4).
+- To delete a single conversation: hover over the conversation item in the sidebar and click the trash icon.
+- To clear all conversation history: click **"Clear History"** at the bottom of the sidebar, or run:
+  ```bash
+  curl -X DELETE http://127.0.0.1:8080/api/v1/conversations
+  ```
+- **Important:** Deleting conversations only removes chat history from the local SQLite database. **Your Obsidian Markdown notes are NEVER modified or deleted.**
+
+### 10. Troubleshooting Common Issues
+| Issue | Cause | Solution |
+| :--- | :--- | :--- |
+| **Status badge shows "Groq Key Missing"** | `GROQ_API_KEY` was not set in the terminal environment | Run `export GROQ_API_KEY="gsk_..."` before starting `./edith chat`. |
+| **HTTP 401 Unauthorized** | Invalid or revoked Groq API key | Verify key at [console.groq.com/keys](https://console.groq.com/keys) and update `GROQ_API_KEY`. |
+| **HTTP 429 Rate Limit** | Groq account rate limit reached | Wait briefly or configure a lighter model like `llama-3.1-8b-instant`. |
+| **Port already in use (`bind: address already in use`)** | Another process is using port `8080` | Start with a different port: `./edith chat --addr 127.0.0.1:8085`. |
+| **"Forbidden cross-origin request" (403)** | Non-local or cross-origin browser request | Ensure you are accessing the UI at `http://127.0.0.1:8080` or `http://localhost:8080`. |

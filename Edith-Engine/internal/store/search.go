@@ -57,7 +57,7 @@ func (db *DB) executeSearch(query string, limit int) ([]SearchResult, error) {
 		SELECT rel_path, title, snippet(notes_fts, -1, '>>>', '<<<', '...', 15), bm25(notes_fts, 0.0, 3.0, 1.0) AS score
 		FROM notes_fts
 		WHERE notes_fts MATCH ?
-		ORDER BY score ASC
+		ORDER BY score ASC, title ASC, rel_path ASC
 		LIMIT ?;
 	`
 

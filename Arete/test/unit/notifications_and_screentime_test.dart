@@ -8,6 +8,7 @@ import 'package:arete/core/providers/app_settings_provider.dart';
 import 'package:arete/features/habits/data/habit_repository.dart';
 import 'package:arete/features/habits/domain/habit_model.dart';
 import 'package:arete/features/notifications/data/notification_providers.dart';
+import 'package:arete/features/notifications/data/notification_service.dart';
 import 'package:arete/features/notifications/domain/notification_preferences_model.dart';
 import 'package:arete/features/screentime/data/screen_time_providers.dart';
 import 'package:arete/features/screentime/data/screen_time_repository.dart';
@@ -228,6 +229,16 @@ void main() {
       expect(habit.isCompletedToday, isFalse);
 
       container.dispose();
+    });
+
+    test('7. NotificationService test notification and exact alarm methods execute safely', () async {
+      final notifService = NotificationService();
+      // On non-android or mock environment these return defaults safely without throwing
+      final canExact = await notifService.canScheduleExactAlarms();
+      expect(canExact, isTrue);
+
+      await notifService.requestExactAlarmPermission();
+      await notifService.showTestNotification();
     });
   });
 }

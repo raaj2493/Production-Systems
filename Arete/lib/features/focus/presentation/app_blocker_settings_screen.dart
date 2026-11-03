@@ -139,6 +139,27 @@ class _AppBlockerSettingsScreenState extends ConsumerState<AppBlockerSettingsScr
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Xiaomi / Redmi tip: If Android says "Restricted setting", go to Settings > Apps > Manage apps > Areté > tap ⋮ (top-right) > "Allow restricted settings".',
+                            style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   AreteButton(
                     label: 'Enable in Android Settings',
@@ -177,6 +198,45 @@ class _AppBlockerSettingsScreenState extends ConsumerState<AppBlockerSettingsScr
                     ),
                   ),
                 ],
+              ),
+            ),
+
+          if (shieldState.isXiaomiDevice)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: AreteCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.settings_suggest_outlined, color: theme.colorScheme.primary, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Keep Focus Shield running on Redmi / Xiaomi',
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'MIUI may stop accessibility services in the background. In Autostart, allow Areté; then open Battery saver for Areté and choose No restrictions. Keep Focus Shield enabled under Settings > Additional settings > Accessibility > Downloaded apps.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AreteButton(
+                      label: 'Open Autostart Settings',
+                      icon: Icons.open_in_new,
+                      variant: AreteButtonVariant.secondary,
+                      onPressed: () => controller.openXiaomiAutostartSettings(),
+                    ),
+                  ],
+                ),
               ),
             ),
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 enum AreteButtonVariant { primary, secondary, ghost, danger }
 
@@ -42,33 +41,37 @@ class _AreteButtonState extends State<AreteButton> {
 
     switch (widget.variant) {
       case AreteButtonVariant.primary:
-        bg = isDark ? AppColors.darkPrimaryAccent : AppColors.lightPrimaryAccent;
-        fg = isDark ? const Color(0xFF121212) : Colors.white;
+        bg = theme.colorScheme.primary;
+        fg = theme.colorScheme.onPrimary;
         if (_isHovered) {
-          bg = isDark ? AppColors.darkAccentHover : AppColors.lightAccentHover;
+          bg = theme.colorScheme.primary.withValues(alpha: 0.85);
         }
         break;
       case AreteButtonVariant.secondary:
-        bg = isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurface;
-        fg = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+        bg = isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface;
+        fg = theme.colorScheme.onSurface;
         borderSide = BorderSide(
           color: _isHovered
               ? theme.colorScheme.primary.withValues(alpha: 0.5)
-              : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+              : (isDark
+                  ? theme.colorScheme.outlineVariant.withValues(alpha: 0.4)
+                  : theme.colorScheme.outlineVariant),
           width: 1,
         );
         break;
       case AreteButtonVariant.ghost:
         bg = _isHovered
-            ? (isDark ? AppColors.darkSurfaceVariant : AppColors.lightAccentLight)
+            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
             : Colors.transparent;
-        fg = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+        fg = theme.colorScheme.onSurface;
         break;
       case AreteButtonVariant.danger:
-        bg = isDark ? AppColors.dangerMutedDark : AppColors.dangerMutedLight;
-        fg = AppColors.dangerMuted;
-        borderSide = const BorderSide(
-          color: AppColors.dangerMuted,
+        bg = isDark
+            ? theme.colorScheme.errorContainer.withValues(alpha: 0.35)
+            : theme.colorScheme.errorContainer.withValues(alpha: 0.55);
+        fg = theme.colorScheme.error;
+        borderSide = BorderSide(
+          color: theme.colorScheme.error.withValues(alpha: 0.5),
           width: 1,
         );
         break;

@@ -2,7 +2,10 @@ package lint
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -21,13 +24,16 @@ const (
 type FindingCategory string
 
 const (
-	CategoryBrokenLink      FindingCategory = "broken_link"
-	CategoryOrphanNote      FindingCategory = "orphan_note"
-	CategorySuspiciousTitle FindingCategory = "suspicious_title"
-	CategoryDuplicate       FindingCategory = "duplicate_candidate"
-	CategoryMissingSource   FindingCategory = "missing_source_ref"
-	CategoryStaleIndex      FindingCategory = "stale_index"
-	CategoryUnindexed       FindingCategory = "unindexed_change"
+	CategoryBrokenLink        FindingCategory = "broken_link"
+	CategoryOrphanNote        FindingCategory = "orphan_note"
+	CategorySuspiciousTitle   FindingCategory = "suspicious_title"
+	CategoryDuplicate         FindingCategory = "duplicate_candidate"
+	CategoryMissingSource     FindingCategory = "missing_source_ref"
+	CategoryStaleIndex        FindingCategory = "stale_index"
+	CategoryUnindexed         FindingCategory = "unindexed_change"
+	CategoryProposalIntegrity FindingCategory = "proposal_integrity"
+	CategoryInvalidSource     FindingCategory = "invalid_source_ref"
+	CategoryContradiction     FindingCategory = "contradiction_candidate"
 )
 
 // Finding represents a single linting or knowledge-maintenance issue.
@@ -309,6 +315,100 @@ func (l *Linter) Run() (*Report, error) {
 						Message:  "Note modified on disk since last database indexing",
 					})
 				}
+			}
+		}
+	}
+
+	// 8. Invalid Source References
+	for _, note := range notesMap {
+		for _, link := range note.Links {
+			if strings.HasPrefix(link.CleanTarget, "00-Sources/") || strings.HasPrefix(link.CleanTarget, "02-Raw-Sources/") {
+				// Verify target exists on disk or in sources DB table
+				targetPath := link.CleanTarget
+				if !strings.HasSuffix(targetPath, ".md") {
+					targetPath += ".md"
+				}
+				if notesMap[targetPath] == nil {
+					// Check database sources table if available
+					foundInDB := false
+					if l.db != nil {
+						if src, err := l.db.GetSourceByHash(link.CleanTarget); err == nil && src != nil {
+							foundInDB = true
+						}
+					}
+					if !foundInDB {
+						report.add(Finding{
+							Category:   CategoryInvalidSource,
+							Severity:   SeverityWarning,
+							Path:       note.Metadata.RelPath,
+							LineNumber: link.LineNumber,
+							Message:    fmt.Sprintf("Invalid source reference: target source %q not found in vault or sources database", link.RawTarget),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// 9. Proposal and Revision Integrity
+	if l.db != nil {
+		proposals, err := l.db.ListProposals("pending")
+		if err == nil {
+			for _, p := range proposals {
+				fullPath := filepath.Join(l.vaultRoot, p.TargetPath)
+				diskData, err := os.ReadFile(fullPath)
+				if err != nil {
+					if p.TargetHash != "" {
+						report.add(Finding{
+							Category: CategoryProposalIntegrity,
+							Severity: SeverityWarning,
+							Path:     p.TargetPath,
+							Message:  fmt.Sprintf("Pending proposal %s target file missing on disk", p.ID),
+							Details:  fmt.Sprintf("Expected hash: %s", p.TargetHash),
+						})
+					}
+				} else {
+					h := sha256.Sum256(diskData)
+					currHash := hex.EncodeToString(h[:])
+					if p.TargetHash != "" && p.TargetHash != currHash {
+						report.add(Finding{
+							Category: CategoryProposalIntegrity,
+							Severity: SeverityError,
+							Path:     p.TargetPath,
+							Message:  fmt.Sprintf("Pending proposal %s has stale target: file modified since proposal was created", p.ID),
+							Details:  fmt.Sprintf("Expected hash: %s, Current disk hash: %s", p.TargetHash[:12], currHash[:12]),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// 10. Conservative Contradiction Detection
+	for title, paths := range titleToPaths {
+		if len(paths) > 1 {
+			var hasActive, hasDeprecated string
+			for _, p := range paths {
+				note := notesMap[p]
+				if note == nil {
+					continue
+				}
+				lower := strings.ToLower(note.Content)
+				if strings.Contains(lower, "status: active") || strings.Contains(lower, "status: current") {
+					hasActive = p
+				}
+				if strings.Contains(lower, "status: deprecated") || strings.Contains(lower, "status: superseded") || strings.Contains(lower, "status: obsolete") {
+					hasDeprecated = p
+				}
+			}
+			if hasActive != "" && hasDeprecated != "" {
+				report.add(Finding{
+					Category: CategoryContradiction,
+					Severity: SeverityWarning,
+					Path:     hasActive,
+					Message:  fmt.Sprintf("Potential contradiction on topic %q: %s marked active while %s marked deprecated/superseded", title, hasActive, hasDeprecated),
+					Details:  fmt.Sprintf("Compare %s and %s", hasActive, hasDeprecated),
+				})
 			}
 		}
 	}

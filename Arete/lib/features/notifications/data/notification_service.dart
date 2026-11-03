@@ -159,18 +159,65 @@ class NotificationService {
         continue;
       }
 
-      // Parse due date
       try {
-        final parsed = DateTime.tryParse(task.dueDate!);
-        if (parsed != null && parsed.isAfter(now)) {
+        final rawDue = task.dueDate!.trim();
+        DateTime? scheduledTime;
+
+        if (rawDue.contains('T') || rawDue.contains(' ')) {
+          scheduledTime = DateTime.tryParse(rawDue);
+        } else {
+          // Date-only string (YYYY-MM-DD)
+          final parsedDate = DateTime.tryParse(rawDue);
+          if (parsedDate != null) {
+            final isToday = parsedDate.year == now.year &&
+                parsedDate.month == now.month &&
+                parsedDate.day == now.day;
+
+            if (isToday) {
+              final morning = DateTime(
+                now.year,
+                now.month,
+                now.day,
+                prefs.morningReminderHour,
+                prefs.morningReminderMinute,
+              );
+              final evening = DateTime(
+                now.year,
+                now.month,
+                now.day,
+                prefs.eveningReminderHour,
+                prefs.eveningReminderMinute,
+              );
+
+              if (morning.isAfter(now)) {
+                scheduledTime = morning;
+              } else if (evening.isAfter(now)) {
+                scheduledTime = evening;
+              } else {
+                // If both morning and evening passed today, alert in 30 minutes
+                scheduledTime = now.add(const Duration(minutes: 30));
+              }
+            } else if (parsedDate.isAfter(DateTime(now.year, now.month, now.day))) {
+              scheduledTime = DateTime(
+                parsedDate.year,
+                parsedDate.month,
+                parsedDate.day,
+                prefs.morningReminderHour,
+                prefs.morningReminderMinute,
+              );
+            }
+          }
+        }
+
+        if (scheduledTime != null && scheduledTime.isAfter(now)) {
           await scheduleTaskAlert(
             id: task.id,
             title: task.title,
-            dueDateTime: parsed,
+            dueDateTime: scheduledTime,
           );
         }
       } catch (e) {
-        // Ignore unparseable
+        debugPrint('NotificationService: syncTasksAlerts error for task ${task.id}: $e');
       }
     }
   }
@@ -278,6 +325,37 @@ class NotificationService {
       });
     } catch (e) {
       debugPrint('NotificationService: showFocusCompletionNotification error: $e');
+    }
+  }
+
+  /// Check whether exact alarm scheduling permission is granted (Android 12+)
+  Future<bool> canScheduleExactAlarms() async {
+    if (!isAndroid) return true;
+    try {
+      final bool? can = await _channel.invokeMethod<bool>('canScheduleExactAlarms');
+      return can ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// Request exact alarm permission settings
+  Future<void> requestExactAlarmPermission() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('requestExactAlarmPermission');
+    } catch (e) {
+      debugPrint('NotificationService: requestExactAlarmPermission error: $e');
+    }
+  }
+
+  /// Immediately trigger a test notification with sound, vibration, and quick action buttons
+  Future<void> showTestNotification() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('showTestNotification');
+    } catch (e) {
+      debugPrint('NotificationService: showTestNotification error: $e');
     }
   }
 }

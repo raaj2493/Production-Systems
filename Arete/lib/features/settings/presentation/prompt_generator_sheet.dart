@@ -193,10 +193,12 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2822) : const Color(0xFFD2E8D4).withValues(alpha: 0.5),
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                  : theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? const Color(0xFF35523E) : const Color(0xFFB0D5B4),
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -205,12 +207,12 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2E4D38) : const Color(0xFF2A4E35),
+                    color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.auto_awesome_rounded,
-                    color: Colors.white,
+                    color: theme.colorScheme.onPrimary,
                     size: 20,
                   ),
                 ),
@@ -223,14 +225,14 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                         'Generate Your Custom Setup',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         'Feed our pre-formatted prompt to ChatGPT or Gemini to build a custom workspace tailored to your goals and study habits.',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark ? Colors.white70 : const Color(0xFF2C4A34),
+                          color: theme.colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -250,13 +252,13 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2E4D38) : const Color(0xFF2A4E35),
+                  color: theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   '1',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 10),
@@ -272,10 +274,10 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1B201D) : const Color(0xFFF4F1EA),
+              color: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? Colors.white12 : const Color(0xFFE2DDD3),
+                color: isDark ? Colors.white12 : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
             ),
             child: Column(
@@ -304,9 +306,9 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: _isPromptCopied
-                          ? (isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35))
-                          : (isDark ? const Color(0xFF2E4D38) : const Color(0xFF2A4E35)),
-                      foregroundColor: Colors.white,
+                          ? theme.colorScheme.secondary
+                          : theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -325,13 +327,13 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2E4D38) : const Color(0xFF2A4E35),
+                  color: theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   '2',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 10),
@@ -349,7 +351,7 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                 label: const Text('Paste', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  foregroundColor: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                  foregroundColor: theme.colorScheme.primary,
                 ),
               ),
             ],
@@ -430,8 +432,8 @@ Now ask me my goals, or generate a tailored setup based on my prompt!
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
-                    foregroundColor: isDark ? const Color(0xFF101C14) : Colors.white,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),

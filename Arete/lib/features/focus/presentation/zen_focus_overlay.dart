@@ -21,33 +21,34 @@ class _ZenFocusOverlayState extends ConsumerState<ZenFocusOverlay> {
   bool _showSoundscapeSheet = false;
 
   ({Color bg, Color surface, Color onSurface, Color primary, Color accent}) _getPhaseColors(
+    ThemeData theme,
     FocusSessionType type,
     bool isDark,
   ) {
     switch (type) {
       case FocusSessionType.focus:
         return (
-          bg: isDark ? const Color(0xFF101C14) : const Color(0xFF1A3824),
-          surface: isDark ? const Color(0xFF162B1D) : const Color(0xFF234B31),
-          onSurface: const Color(0xFFF1F8F3),
-          primary: const Color(0xFFD2E8D4),
-          accent: const Color(0xFFFF7A59),
+          bg: isDark ? theme.colorScheme.surface : theme.colorScheme.surfaceContainerHighest,
+          surface: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surfaceContainerHigh,
+          onSurface: theme.colorScheme.onSurface,
+          primary: theme.colorScheme.primary,
+          accent: theme.colorScheme.secondary,
         );
       case FocusSessionType.shortBreak:
         return (
-          bg: isDark ? const Color(0xFF132219) : const Color(0xFFE2F1E4),
-          surface: isDark ? const Color(0xFF1D3527) : const Color(0xFFD0E8D4),
-          onSurface: isDark ? const Color(0xFFF0FAF2) : const Color(0xFF0F2B18),
-          primary: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF1B4E2B),
-          accent: const Color(0xFFFF7A59),
+          bg: isDark ? theme.colorScheme.surfaceContainerLowest : theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
+          surface: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
+          onSurface: theme.colorScheme.onSurface,
+          primary: theme.colorScheme.secondary,
+          accent: theme.colorScheme.primary,
         );
       case FocusSessionType.longBreak:
         return (
-          bg: isDark ? const Color(0xFF281C14) : const Color(0xFFFDF0E2),
-          surface: isDark ? const Color(0xFF38271C) : const Color(0xFFFFE0C2),
-          onSurface: isDark ? const Color(0xFFFFF1EB) : const Color(0xFF4A2508),
-          primary: isDark ? const Color(0xFFFFB77D) : const Color(0xFF8A4305),
-          accent: const Color(0xFFFF7A59),
+          bg: isDark ? theme.colorScheme.surfaceContainerLowest : theme.colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+          surface: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+          onSurface: theme.colorScheme.onSurface,
+          primary: theme.colorScheme.tertiary,
+          accent: theme.colorScheme.primary,
         );
     }
   }
@@ -66,7 +67,7 @@ class _ZenFocusOverlayState extends ConsumerState<ZenFocusOverlay> {
     final isRunning = timerState.state == TimerState.running;
     final isPaused = timerState.state == TimerState.paused;
 
-    final phaseColors = _getPhaseColors(timerState.sessionType, isDark);
+    final phaseColors = _getPhaseColors(theme, timerState.sessionType, isDark);
 
     // Linked task title if available
     String? linkedTaskTitle;

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/providers/app_settings_provider.dart';
+import '../data/blocked_apps_repository.dart';
 import '../data/focus_repository.dart';
 import '../data/focus_shield_service.dart';
 import '../data/pip_service.dart';
@@ -196,6 +198,9 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
         _startTicker();
         _syncNotification(isRunning: true);
         _ref.read(pipServiceProvider).setAutoEnterEnabled(true);
+        if (sessionType == FocusSessionType.focus) {
+          _activateFocusShield(targetEndMs);
+        }
       }
     } else if (savedStateStr == 'paused') {
       final remaining = prefs.getInt(_keyRemainingSeconds) ?? totalSeconds;
@@ -354,19 +359,58 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     _syncNotification(isRunning: true);
 
     // Activate Focus Shield natively if enabled and in focus mode
-    final shieldState = _ref.read(focusShieldProvider);
-    final shieldService = _ref.read(focusShieldServiceProvider);
+    if (state.sessionType == FocusSessionType.focus) {
+      await _activateFocusShield(targetEndMs);
+    }
+  }
 
-    if (shieldState.isShieldEnabled &&
-        shieldState.selectedPackages.isNotEmpty &&
-        state.sessionType == FocusSessionType.focus) {
-      await shieldService.startShield(
-        blockedPackages: shieldState.selectedPackages.toList(),
-        endTimeMs: targetEndMs,
-        strictMode: shieldState.strictMode,
-        sessionLabel: 'Deep Focus Session',
-        sessionId: const Uuid().v4(),
-      );
+  Future<void> _activateFocusShield(int targetEndMs) async {
+    try {
+      final shieldState = _ref.read(focusShieldProvider);
+      final shieldService = _ref.read(focusShieldServiceProvider);
+      final repo = _ref.read(blockedAppsRepositoryProvider);
+
+      var pkgs = shieldState.selectedPackages.toList();
+      if (pkgs.isEmpty) {
+        pkgs = await repo.getBlockedPackageNames();
+      }
+
+      if (pkgs.isEmpty) {
+        pkgs = const [
+          'com.instagram.android',
+          'com.instagram.lite',
+          'com.google.android.youtube',
+          'app.revanced.android.youtube',
+          'com.vanced.android.youtube',
+          'com.reddit.frontpage',
+          'com.twitter.android',
+          'com.twitter.android.lite',
+          'com.facebook.katana',
+          'com.facebook.lite',
+          'com.snapchat.android',
+          'com.dts.freefiremax',
+          'com.dts.freefireth',
+          'com.pubg.imobile',
+          'com.tencent.ig',
+          'com.zhiliaoapp.musically',
+          'com.ss.android.ugc.trill',
+          'tv.twitch.android.app',
+        ];
+      }
+
+      final isShieldOn = shieldState.isShieldEnabled || pkgs.isNotEmpty;
+
+      if (isShieldOn && pkgs.isNotEmpty) {
+        await shieldService.startShield(
+          blockedPackages: pkgs,
+          endTimeMs: targetEndMs,
+          strictMode: shieldState.strictMode,
+          sessionLabel: 'Deep Focus Session',
+          sessionId: const Uuid().v4(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error activating Focus Shield: $e');
     }
   }
 
@@ -385,6 +429,9 @@ class FocusTimerController extends StateNotifier<FocusTimerState> {
     _persistState(targetEndMs: targetEndMs);
     if (state.state == TimerState.running) {
       _syncNotification(isRunning: true);
+      if (state.sessionType == FocusSessionType.focus && targetEndMs != null) {
+        _activateFocusShield(targetEndMs);
+      }
     }
   }
 

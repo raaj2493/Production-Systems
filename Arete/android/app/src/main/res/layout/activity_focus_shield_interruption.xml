@@ -88,6 +88,71 @@
         android:fontFamily="sans-serif-medium"
         android:stateListAnimator="@null" />
 
+    <!-- Short-Form Content Quick Pass Options (Hidden by default, shown for Shorts/Reels) -->
+    <LinearLayout
+        android:id="@+id/llQuickPassContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Need a quick break? Watch for a little time:"
+            android:textColor="#71717A"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnQuickPass2Min"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_timer_pill"
+                android:text="2 Mins"
+                android:textColor="#1C1C1E"
+                android:textSize="14sp"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium" />
+
+            <Button
+                android:id="@+id/btnQuickPass5Min"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_timer_pill"
+                android:text="5 Mins"
+                android:textColor="#1C1C1E"
+                android:textSize="14sp"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium" />
+
+            <Button
+                android:id="@+id/btnQuickPass10Min"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_timer_pill"
+                android:text="10 Mins"
+                android:textColor="#1C1C1E"
+                android:textSize="14sp"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- Secondary / Emergency Exit Action -->
     <TextView
         android:id="@+id/tvEmergencyExit"

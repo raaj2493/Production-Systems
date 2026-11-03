@@ -67,10 +67,10 @@ class ReminderConfigSection extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // M3 Tonal Container Colors
-    final containerBg = isDark ? const Color(0xFF232826) : const Color(0xFFF4F1EA);
-    final highlightSage = isDark ? const Color(0xFF2D3C32) : const Color(0xFFD2E8D4);
-    final lavenderTonal = isDark ? const Color(0xFF32283D) : const Color(0xFFE8DEF8);
-    final amberTonal = isDark ? const Color(0xFF3D3220) : const Color(0xFFFFDDB3);
+    final containerBg = isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface;
+    final highlightSage = theme.colorScheme.primaryContainer;
+    final lavenderTonal = theme.colorScheme.secondaryContainer;
+    final amberTonal = theme.colorScheme.tertiaryContainer;
 
     return Container(
       decoration: BoxDecoration(
@@ -321,7 +321,7 @@ class ReminderConfigSection extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                             color: isSelected
-                                ? (isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623))
+                                ? theme.colorScheme.onPrimaryContainer
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                         ),

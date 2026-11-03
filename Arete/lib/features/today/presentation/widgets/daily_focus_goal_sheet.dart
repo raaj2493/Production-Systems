@@ -93,13 +93,13 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                  color: theme.colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.track_changes_rounded,
                   size: 20,
-                  color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                  color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
               const SizedBox(width: 12),
@@ -134,10 +134,12 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF252C27) : const Color(0xFFFAF8F5),
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+                  : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark ? Colors.white12 : const Color(0xFFE2DDD3),
+                color: isDark ? Colors.white12 : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                 width: 1.0,
               ),
             ),
@@ -149,7 +151,7 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -1.0,
-                    color: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -189,16 +191,18 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                   color: isSelected
-                      ? (isDark ? const Color(0xFF101C14) : Colors.white)
+                      ? theme.colorScheme.onPrimary
                       : theme.colorScheme.onSurface,
                 ),
-                selectedColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-                backgroundColor: isDark ? const Color(0xFF252C27) : const Color(0xFFFAF8F5),
+                selectedColor: theme.colorScheme.primary,
+                backgroundColor: isDark
+                    ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+                    : theme.colorScheme.surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                 side: BorderSide(
                   color: isSelected
                       ? Colors.transparent
-                      : (isDark ? Colors.white12 : const Color(0xFFE2DDD3)),
+                      : (isDark ? Colors.white12 : theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
                 onSelected: (_) {
                   setState(() {
@@ -235,9 +239,11 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-              thumbColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-              inactiveTrackColor: isDark ? Colors.white12 : const Color(0xFFDDD7CC),
+              activeTrackColor: theme.colorScheme.primary,
+              thumbColor: theme.colorScheme.primary,
+              inactiveTrackColor: isDark
+                  ? Colors.white12
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
               trackHeight: 6,
             ),
             child: Slider(
@@ -261,8 +267,8 @@ class _DailyFocusGoalSheetState extends ConsumerState<DailyFocusGoalSheet> {
             height: 48,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-                foregroundColor: isDark ? const Color(0xFF101C14) : Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
               onPressed: () {

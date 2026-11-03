@@ -8,3 +8,9 @@ edith
 
 # OS artifacts
 .DS_Store
+
+# Local environment configuration & secrets
+.env
+.env.*
+!.env.example
+*.env

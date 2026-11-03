@@ -1,14 +1,20 @@
 package engine
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"edith-engine/internal/config"
+	"edith-engine/internal/contextpkg"
+	"edith-engine/internal/graph"
 	"edith-engine/internal/lint"
 	"edith-engine/internal/proposals"
 	"edith-engine/internal/store"
 	"edith-engine/internal/vault"
+	"edith-engine/internal/workflows"
 )
 
 // ScanSummary contains the outcome of scanning the vault against current index status.
@@ -51,6 +57,7 @@ type Engine struct {
 	reader    *vault.Reader
 	db        *store.DB
 	proposals *proposals.Service
+	completer workflows.LLMCompleter
 }
 
 // New initializes an Engine instance using the provided configuration.
@@ -175,6 +182,7 @@ func (e *Engine) Index() (*IndexSummary, error) {
 	}
 
 	diskSet := make(map[string]bool)
+	resolve := buildLinkResolver(paths)
 
 	for _, p := range paths {
 		diskSet[p] = true
@@ -187,20 +195,24 @@ func (e *Engine) Index() (*IndexSummary, error) {
 
 		dn, exists := dbMap[p]
 		if !exists {
-			// New note: index
+			// New note: index note and graph links
 			if err := e.db.IndexNote(note); err != nil {
 				summary.FailedCount++
 				summary.Errors = append(summary.Errors, fmt.Sprintf("failed indexing %s: %v", p, err))
 			} else {
 				summary.AddedCount++
+				storeLinks := noteLinksToStoreLinks(p, note.Links, resolve)
+				_ = e.db.SaveNoteLinks(p, storeLinks)
 			}
 		} else if dn.ContentHash != note.Metadata.ContentHash || dn.ModTime.Unix() != note.Metadata.ModTime.Unix() {
-			// Changed note: update index
+			// Changed note: update index and graph links
 			if err := e.db.IndexNote(note); err != nil {
 				summary.FailedCount++
 				summary.Errors = append(summary.Errors, fmt.Sprintf("failed updating %s: %v", p, err))
 			} else {
 				summary.UpdatedCount++
+				storeLinks := noteLinksToStoreLinks(p, note.Links, resolve)
+				_ = e.db.SaveNoteLinks(p, storeLinks)
 			}
 		} else {
 			// Unchanged note: skip
@@ -215,6 +227,8 @@ func (e *Engine) Index() (*IndexSummary, error) {
 				summary.Errors = append(summary.Errors, fmt.Sprintf("failed removing stale entry %s: %v", dn.RelPath, err))
 			} else {
 				summary.RemovedCount++
+				_ = e.db.DeleteNoteLinks(dn.RelPath)
+				_ = e.db.InvalidateTargetLinks(dn.RelPath)
 			}
 		}
 	}
@@ -229,12 +243,15 @@ func (e *Engine) Index() (*IndexSummary, error) {
 	return summary, nil
 }
 
-// Reindex clears the existing SQLite index and rebuilds all metadata and FTS5 entries from scratch.
+// Reindex clears the existing SQLite index and rebuilds all metadata, FTS5, and graph links from scratch.
 func (e *Engine) Reindex() (*IndexSummary, error) {
 	start := time.Now()
 
 	if err := e.db.ClearAllNotes(); err != nil {
 		return nil, fmt.Errorf("failed to clear existing index: %w", err)
+	}
+	if err := e.db.ClearAllNoteLinks(); err != nil {
+		return nil, fmt.Errorf("failed to clear existing graph links: %w", err)
 	}
 
 	paths, err := e.scanner.Scan()
@@ -246,6 +263,8 @@ func (e *Engine) Reindex() (*IndexSummary, error) {
 		DiscoveredCount: len(paths),
 		Errors:          make([]string, 0),
 	}
+
+	resolve := buildLinkResolver(paths)
 
 	for _, p := range paths {
 		note, err := e.reader.ReadNote(p)
@@ -260,6 +279,8 @@ func (e *Engine) Reindex() (*IndexSummary, error) {
 			summary.Errors = append(summary.Errors, fmt.Sprintf("failed indexing %s: %v", p, err))
 		} else {
 			summary.AddedCount++
+			storeLinks := noteLinksToStoreLinks(p, note.Links, resolve)
+			_ = e.db.SaveNoteLinks(p, storeLinks)
 		}
 	}
 
@@ -270,6 +291,59 @@ func (e *Engine) Reindex() (*IndexSummary, error) {
 			summary.Duration.Round(time.Millisecond), summary.AddedCount, summary.FailedCount))
 
 	return summary, nil
+}
+
+func buildLinkResolver(notePaths []string) func(target string) string {
+	exactMap := make(map[string]bool)
+	baseMap := make(map[string][]string)
+
+	for _, p := range notePaths {
+		exactMap[p] = true
+		base := strings.ToLower(filepath.Base(p))
+		base = strings.TrimSuffix(base, ".md")
+		baseMap[base] = append(baseMap[base], p)
+	}
+
+	return func(target string) string {
+		target = strings.TrimSpace(target)
+		if target == "" {
+			return ""
+		}
+		// 1. Direct path match
+		if exactMap[target] {
+			return target
+		}
+		if exactMap[target+".md"] {
+			return target + ".md"
+		}
+		// 2. Basename match
+		base := strings.ToLower(filepath.Base(target))
+		base = strings.TrimSuffix(base, ".md")
+		if list, ok := baseMap[base]; ok && len(list) > 0 {
+			return list[0]
+		}
+		return ""
+	}
+}
+
+func noteLinksToStoreLinks(sourcePath string, links []vault.Link, resolve func(target string) string) []store.NoteLink {
+	var storeLinks []store.NoteLink
+	for _, l := range links {
+		if l.IsExternal {
+			continue // only internal links form the knowledge graph
+		}
+		targetPath := resolve(l.CleanTarget)
+		storeLinks = append(storeLinks, store.NoteLink{
+			SourcePath:    sourcePath,
+			TargetPath:    targetPath,
+			RawTarget:     l.RawTarget,
+			DisplayText:   l.DisplayText,
+			HeadingAnchor: l.HeadingAnchor,
+			IsWikiLink:    l.IsWikiLink,
+			LineNumber:    l.LineNumber,
+		})
+	}
+	return storeLinks
 }
 
 // Search performs a full-text search against the indexed notes using SQLite FTS5.
@@ -336,4 +410,49 @@ func (e *Engine) Lint() (*lint.Report, error) {
 // Proposals returns the proposal review service.
 func (e *Engine) Proposals() *proposals.Service {
 	return e.proposals
+}
+
+// Graph returns the Knowledge Graph service.
+func (e *Engine) Graph() *graph.Service {
+	return graph.New(e.db)
+}
+
+// Ingest runs the source ingestion workflow.
+func (e *Engine) Ingest(req workflows.IngestRequest) (*workflows.IngestReport, error) {
+	wf := workflows.NewIngestWorkflow(e.db, e.proposals)
+	return wf.Run(req)
+}
+
+// Query runs the grounded knowledge query workflow.
+func (e *Engine) Query(req workflows.QueryRequest) (*workflows.QueryResult, error) {
+	wf := workflows.NewQueryWorkflow(e.db, e.Graph())
+	return wf.Run(req)
+}
+
+// Synthesize runs the deterministic knowledge synthesis workflow.
+func (e *Engine) Synthesize(req workflows.SynthesizeRequest) (*workflows.SynthesizeResult, error) {
+	wf := workflows.NewSynthesizeWorkflow(e.db, e.Graph(), e.proposals)
+	return wf.Run(req)
+}
+
+// Review returns the human review workflow for change proposals and revisions.
+func (e *Engine) Review() *workflows.ReviewWorkflow {
+	return workflows.NewReviewWorkflow(e.cfg.VaultPath, e.db, e.proposals)
+}
+
+// Context runs the model-independent bounded context packager.
+func (e *Engine) Context(req contextpkg.ContextRequest) (*contextpkg.ContextPackage, error) {
+	packager := contextpkg.NewPackager(e.cfg.VaultPath, e.db, e.Graph(), e.reader)
+	return packager.Assemble(req)
+}
+
+// SetCompleter sets an optional LLM completer for advanced classification.
+func (e *Engine) SetCompleter(c workflows.LLMCompleter) {
+	e.completer = c
+}
+
+// Capture executes the universal capture and safe auto-organization workflow.
+func (e *Engine) Capture(ctx context.Context, req workflows.CaptureRequest) (*workflows.CaptureReport, error) {
+	wf := workflows.NewCaptureWorkflow(e.cfg.VaultPath, e.db, e.reader, e.proposals, e.completer)
+	return wf.Run(ctx, req)
 }

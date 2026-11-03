@@ -7,6 +7,7 @@ class FocusShieldState {
   final bool isShieldEnabled;
   final bool strictMode;
   final bool isAccessibilityGranted;
+  final bool isXiaomiDevice;
   final List<BlockedApp> installedApps;
   final Set<String> selectedPackages;
   final String searchQuery;
@@ -17,6 +18,7 @@ class FocusShieldState {
     this.isShieldEnabled = false,
     this.strictMode = false,
     this.isAccessibilityGranted = false,
+    this.isXiaomiDevice = false,
     this.installedApps = const [],
     this.selectedPackages = const {},
     this.searchQuery = '',
@@ -41,6 +43,7 @@ class FocusShieldState {
     bool? isShieldEnabled,
     bool? strictMode,
     bool? isAccessibilityGranted,
+    bool? isXiaomiDevice,
     List<BlockedApp>? installedApps,
     Set<String>? selectedPackages,
     String? searchQuery,
@@ -51,6 +54,7 @@ class FocusShieldState {
       isShieldEnabled: isShieldEnabled ?? this.isShieldEnabled,
       strictMode: strictMode ?? this.strictMode,
       isAccessibilityGranted: isAccessibilityGranted ?? this.isAccessibilityGranted,
+      isXiaomiDevice: isXiaomiDevice ?? this.isXiaomiDevice,
       installedApps: installedApps ?? this.installedApps,
       selectedPackages: selectedPackages ?? this.selectedPackages,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -72,14 +76,52 @@ class FocusShieldController extends StateNotifier<FocusShieldState> {
   Future<void> init() async {
     state = state.copyWith(isLoading: true);
     final isGranted = await _shieldService.isAccessibilityServiceEnabled();
+    final isXiaomi = await _shieldService.isXiaomiDevice();
     final savedBlocked = await _repo.getBlockedPackageNames();
+
+    final Set<String> packagesToBlock;
+    if (savedBlocked.isNotEmpty) {
+      packagesToBlock = savedBlocked.toSet();
+      packagesToBlock.add('com.google.android.youtube');
+      packagesToBlock.add('app.morphe.android.youtube');
+      packagesToBlock.add('com.instagram.android');
+    } else {
+      packagesToBlock = {
+        'com.google.android.youtube',
+        'app.morphe.android.youtube',
+        'app.revanced.android.youtube',
+        'com.vanced.android.youtube',
+        'com.instagram.android',
+        'com.instagram.lite',
+        'com.reddit.frontpage',
+        'com.twitter.android',
+        'com.twitter.android.lite',
+        'com.facebook.katana',
+        'com.facebook.lite',
+        'com.snapchat.android',
+        'com.dts.freefiremax',
+        'com.dts.freefireth',
+        'com.pubg.imobile',
+        'com.tencent.ig',
+        'com.zhiliaoapp.musically',
+        'com.ss.android.ugc.trill',
+        'tv.twitch.android.app',
+      };
+      for (final p in packagesToBlock) {
+        _repo.setAppBlocked(p, p, true);
+      }
+    }
 
     state = state.copyWith(
       isAccessibilityGranted: isGranted,
-      selectedPackages: savedBlocked.toSet(),
-      isShieldEnabled: savedBlocked.isNotEmpty,
+      isXiaomiDevice: isXiaomi,
+      selectedPackages: packagesToBlock,
+      isShieldEnabled: true,
       isLoading: false,
     );
+
+    // Sync to native SharedPreferences right away
+    _shieldService.setBlockedPackages(packagesToBlock.toList());
 
     await loadInstalledApps();
   }
@@ -91,6 +133,10 @@ class FocusShieldController extends StateNotifier<FocusShieldState> {
 
   Future<void> openAccessibilitySettings() async {
     await _shieldService.openAccessibilitySettings();
+  }
+
+  Future<void> openXiaomiAutostartSettings() async {
+    await _shieldService.openXiaomiAutostartSettings();
   }
 
   Future<void> loadInstalledApps() async {
@@ -111,6 +157,9 @@ class FocusShieldController extends StateNotifier<FocusShieldState> {
 
   void toggleShieldEnabled(bool enabled) {
     state = state.copyWith(isShieldEnabled: enabled);
+    if (!enabled) {
+      _shieldService.stopShield();
+    }
   }
 
   void toggleStrictMode(bool enabled) {
@@ -130,6 +179,7 @@ class FocusShieldController extends StateNotifier<FocusShieldState> {
 
     state = state.copyWith(selectedPackages: updated);
     await _repo.setAppBlocked(packageName, appName, willBeBlocked);
+    await _shieldService.setBlockedPackages(updated.toList());
   }
 
   Future<void> selectAll() async {
@@ -137,11 +187,13 @@ class FocusShieldController extends StateNotifier<FocusShieldState> {
     state = state.copyWith(selectedPackages: allPkgs);
     final names = {for (final a in state.installedApps) a.packageName: a.appName};
     await _repo.syncBlockedPackages(allPkgs, names);
+    await _shieldService.setBlockedPackages(allPkgs.toList());
   }
 
   Future<void> deselectAll() async {
     state = state.copyWith(selectedPackages: {});
     await _repo.syncBlockedPackages({}, {});
+    await _shieldService.setBlockedPackages([]);
   }
 
   void updateInterruptionCount(int count) {

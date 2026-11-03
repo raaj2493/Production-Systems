@@ -9,6 +9,7 @@ import '../../habits/data/habit_repository.dart';
 import '../../habits/presentation/widgets/habit_heatmap.dart';
 import '../../tasks/data/task_repository.dart';
 import '../../settings/presentation/data_backup_sheet.dart';
+import '../../settings/presentation/notification_preference_sheet.dart';
 import '../../today/presentation/widgets/interactive_tour_sheet.dart';
 
 final _allTimeFocusSecondsProvider = FutureProvider<int>((ref) async {
@@ -174,8 +175,8 @@ class MoreScreen extends ConsumerWidget {
                   icon: '✅',
                   label: 'Velocity',
                   value: taskRateStr,
-                  bgColor: const Color(0xFFD2E8D4),
-                  textColor: const Color(0xFF1B3623),
+                  bgColor: theme.colorScheme.primaryContainer,
+                  textColor: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
             ],
@@ -232,12 +233,29 @@ class MoreScreen extends ConsumerWidget {
             badge: 'TOUR',
             onTap: () => InteractiveTourSheet.show(context, force: true),
           ),
+          _buildHubCard(
+            context,
+            icon: Icons.pie_chart_outline_rounded,
+            title: 'Digital Wellbeing & Screen Time',
+            subtitle: 'Phone screen time, unlocks, distraction stats & Shorts/Reels loop blocker',
+            badge: 'SYNC',
+            onTap: () => context.push('/more/wellbeing'),
+          ),
+          const SizedBox(height: 10),
+          _buildHubCard(
+            context,
+            icon: Icons.notifications_active_rounded,
+            title: 'Notifications & Digital Wellness',
+            subtitle: 'Habit alarms, task alerts, screen time & test notifications',
+            badge: 'TEST',
+            onTap: () => NotificationPreferenceSheet.show(context),
+          ),
           const SizedBox(height: 10),
           _buildHubCard(
             context,
             icon: Icons.tune_rounded,
             title: 'Settings & Focus Preferences',
-            subtitle: 'Daily targets, timer defaults, and notifications',
+            subtitle: 'Daily targets, timer defaults, and preferences',
             onTap: () => context.push('/more/settings'),
           ),
 
@@ -357,27 +375,51 @@ class MoreScreen extends ConsumerWidget {
     final palettes = [
       {
         'id': 'sage_coral',
-        'name': 'Sage & Coral',
+        'name': 'Sage & Coral 🌿',
         'color1': const Color(0xFF2A4E35),
-        'color2': const Color(0xFFFF7A59),
+        'color2': const Color(0xFFD2E8D4),
       },
       {
-        'id': 'ocean_sunrise',
-        'name': 'Ocean & Sunrise',
-        'color1': const Color(0xFF1B4D68),
-        'color2': const Color(0xFFFF7043),
+        'id': 'sunset_terracotta',
+        'name': 'Terracotta & Oat ☕',
+        'color1': const Color(0xFF874B38),
+        'color2': const Color(0xFFF5E1D5),
       },
       {
-        'id': 'berry_lavender',
-        'name': 'Berry Lavender',
-        'color1': const Color(0xFF4A284D),
-        'color2': const Color(0xFFC084FC),
+        'id': 'sakura_blossom',
+        'name': 'Sakura & Matcha 🌸',
+        'color1': const Color(0xFF8A4456),
+        'color2': const Color(0xFFF6DAE2),
       },
       {
-        'id': 'cyber_lime',
-        'name': 'Cyber Lime',
-        'color1': const Color(0xFF2E3A1A),
-        'color2': const Color(0xFFA3E635),
+        'id': 'candy_pop',
+        'name': 'Rose & Sand 🪨',
+        'color1': const Color(0xFF7D4954),
+        'color2': const Color(0xFFF3DADF),
+      },
+      {
+        'id': 'retro_synthwave',
+        'name': 'Dusk & Lavender 🪻',
+        'color1': const Color(0xFF534C75),
+        'color2': const Color(0xFFE2DEF2),
+      },
+      {
+        'id': 'nordic_frost',
+        'name': 'Nordic Mist ❄️',
+        'color1': const Color(0xFF345468),
+        'color2': const Color(0xFFCFE0E8),
+      },
+      {
+        'id': 'cyberpunk_neon',
+        'name': 'Matcha & Cream 🍵',
+        'color1': const Color(0xFF3D5737),
+        'color2': const Color(0xFFDDE8D6),
+      },
+      {
+        'id': 'obsidian_minimal',
+        'name': 'Obsidian OLED 🖤',
+        'color1': const Color(0xFF27272A),
+        'color2': const Color(0xFFD4D4D8),
       },
     ];
 
@@ -452,7 +494,10 @@ class MoreScreen extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: palettes.map((pal) {
-              final isSelected = settings.colorPalette == pal['id'];
+              final palId = pal['id'] as String;
+              final isSelected = settings.colorPalette == palId ||
+                  (palId == 'cyberpunk_neon' && settings.colorPalette == 'cyber_lime') ||
+                  (palId == 'nordic_frost' && settings.colorPalette == 'ocean_sunrise');
               final color1 = pal['color1'] as Color;
               final color2 = pal['color2'] as Color;
 

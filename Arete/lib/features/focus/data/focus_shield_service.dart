@@ -32,6 +32,26 @@ class FocusShieldService {
     }
   }
 
+  Future<bool> isXiaomiDevice() async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('isXiaomiDevice') ?? false;
+    } catch (e) {
+      debugPrint('FocusShieldService: isXiaomiDevice error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> openXiaomiAutostartSettings() async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('openXiaomiAutostartSettings') ?? false;
+    } catch (e) {
+      debugPrint('FocusShieldService: openXiaomiAutostartSettings error: $e');
+      return false;
+    }
+  }
+
   /// Queries all launchable installed user applications
   Future<List<BlockedApp>> getInstalledApps() async {
     if (!isAndroid) return [];
@@ -108,6 +128,20 @@ class FocusShieldService {
     }
   }
 
+  /// Updates blocked packages set in native SharedPreferences
+  Future<bool> setBlockedPackages(List<String> blockedPackages) async {
+    if (!isAndroid) return false;
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('setBlockedPackages', {
+        'blockedPackages': blockedPackages,
+      });
+      return success ?? false;
+    } catch (e) {
+      debugPrint('FocusShieldService: setBlockedPackages error: $e');
+      return false;
+    }
+  }
+
   /// Resumes Focus Shield with updated target end time
   Future<bool> resumeShield({required int newEndTimeMs}) async {
     if (!isAndroid) return false;
@@ -151,6 +185,102 @@ class FocusShieldService {
       return count ?? 0;
     } catch (e) {
       return 0;
+    }
+  }
+
+  /// Check whether YouTube Shorts and Instagram Reels blocking is toggled ON
+  Future<bool> isShortFormBlockingEnabled() async {
+    if (!isAndroid) return true;
+    try {
+      final bool? enabled = await _channel.invokeMethod<bool>('isShortFormBlockingEnabled');
+      return enabled ?? true;
+    } catch (e) {
+      debugPrint('FocusShieldService: isShortFormBlockingEnabled error: $e');
+      return true;
+    }
+  }
+
+  /// Toggle YouTube Shorts and Instagram Reels blocking
+  Future<void> setShortFormBlockingEnabled(bool enabled) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('setShortFormBlockingEnabled', {'enabled': enabled});
+    } catch (e) {
+      debugPrint('FocusShieldService: setShortFormBlockingEnabled error: $e');
+    }
+  }
+
+  /// Get Quick Pass status and remaining seconds
+  Future<Map<String, dynamic>> getQuickPassStatus() async {
+    if (!isAndroid) return {'isGranted': false, 'remainingSeconds': 0, 'blockedCount': 0};
+    try {
+      final Map<dynamic, dynamic>? res = await _channel.invokeMethod<Map<dynamic, dynamic>>('getQuickPassStatus');
+      if (res != null) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (e) {
+      debugPrint('FocusShieldService: getQuickPassStatus error: $e');
+    }
+    return {'isGranted': false, 'remainingSeconds': 0, 'blockedCount': 0};
+  }
+
+  /// Grant a temporary Quick Pass for short form viewing (e.g. 2, 5, 10 minutes)
+  Future<void> grantQuickPass(int minutes) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('grantQuickPass', {'minutes': minutes});
+    } catch (e) {
+      debugPrint('FocusShieldService: grantQuickPass error: $e');
+    }
+  }
+
+  /// Revoke Quick Pass immediately
+  Future<void> clearQuickPass() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('clearQuickPass');
+    } catch (e) {
+      debugPrint('FocusShieldService: clearQuickPass error: $e');
+    }
+  }
+
+  /// Play ambient sound (rain, white_noise, binaural, etc.)
+  Future<void> playAmbientSound(String type, double volume) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('playAmbientSound', {'type': type, 'volume': volume});
+    } catch (e) {
+      debugPrint('FocusShieldService: playAmbientSound error: $e');
+    }
+  }
+
+  /// Play custom user selected local music
+  Future<void> playCustomMusic(String filePath, double volume) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('playCustomMusic', {'filePath': filePath, 'volume': volume});
+    } catch (e) {
+      debugPrint('FocusShieldService: playCustomMusic error: $e');
+    }
+  }
+
+  /// Stop ambient or custom music
+  Future<void> stopAmbientSound() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('stopAmbientSound');
+    } catch (e) {
+      debugPrint('FocusShieldService: stopAmbientSound error: $e');
+    }
+  }
+
+  /// Adjust ambient sound volume
+  Future<void> setAmbientVolume(double volume) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('setAmbientVolume', {'volume': volume});
+    } catch (e) {
+      debugPrint('FocusShieldService: setAmbientVolume error: $e');
     }
   }
 }

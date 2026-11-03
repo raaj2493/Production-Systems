@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/tables.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../notifications/data/notification_providers.dart';
 import '../../reminders/data/reminder_repository.dart';
 import '../domain/habit_completion_model.dart';
 import '../domain/habit_model.dart';
@@ -225,9 +226,22 @@ final habitRepositoryProvider = Provider<HabitRepository>((ref) {
 
 class HabitsNotifier extends StateNotifier<AsyncValue<List<Habit>>> {
   final HabitRepository _repository;
+  final Ref? _ref;
 
-  HabitsNotifier(this._repository) : super(const AsyncValue.loading()) {
+  HabitsNotifier(this._repository, [this._ref]) : super(const AsyncValue.loading()) {
     loadHabits();
+  }
+
+  void _syncReminders() {
+    final ref = _ref;
+    if (ref == null) return;
+    try {
+      final notifService = ref.read(notificationServiceProvider);
+      final notifPrefs = ref.read(notificationPreferencesProvider);
+      state.whenData((habits) {
+        notifService.syncHabitsReminders(habits, notifPrefs);
+      });
+    } catch (_) {}
   }
 
   Future<void> loadHabits() async {
@@ -242,17 +256,20 @@ class HabitsNotifier extends StateNotifier<AsyncValue<List<Habit>>> {
   Future<void> addHabit(Habit habit) async {
     await _repository.createHabit(habit);
     await loadHabits();
+    _syncReminders();
   }
 
   Future<void> updateHabit(Habit habit) async {
     await _repository.updateHabit(habit);
     await loadHabits();
+    _syncReminders();
   }
 
   Future<void> deleteHabit(String id) async {
     await _repository.deleteHabit(id);
     await ReminderRepository().deleteRemindersForTarget('habit', id);
     await loadHabits();
+    _syncReminders();
   }
 
   Future<void> toggleHabitCompletion(String habitId, [String? dateIso]) async {
@@ -277,7 +294,7 @@ class HabitsNotifier extends StateNotifier<AsyncValue<List<Habit>>> {
 final habitsProvider =
     StateNotifierProvider<HabitsNotifier, AsyncValue<List<Habit>>>((ref) {
   final repo = ref.watch(habitRepositoryProvider);
-  return HabitsNotifier(repo);
+  return HabitsNotifier(repo, ref);
 });
 
 final todayHabitsProvider = Provider<List<Habit>>((ref) {

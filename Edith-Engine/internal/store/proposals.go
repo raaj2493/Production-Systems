@@ -161,12 +161,75 @@ func (db *DB) UpdateProposalStatus(id, status, reviewNotes string) error {
 // SaveRevision preserves the previous content of a note before applying a change proposal.
 func (db *DB) SaveRevision(r *Revision) error {
 	appliedUnix := r.AppliedAt.UTC().Unix()
-	_, err := db.conn.Exec(`
+	res, err := db.conn.Exec(`
 		INSERT INTO proposal_revisions (proposal_id, target_path, original_content, original_hash, applied_at_unix)
 		VALUES (?, ?, ?, ?, ?);
 	`, r.ProposalID, r.TargetPath, r.OriginalContent, r.OriginalHash, appliedUnix)
 	if err != nil {
 		return fmt.Errorf("failed to save revision record: %w", err)
 	}
+	id, err := res.LastInsertId()
+	if err == nil {
+		r.ID = id
+	}
 	return nil
+}
+
+// ListRevisions lists revisions, optionally filtered by targetPath.
+func (db *DB) ListRevisions(targetPath string) ([]*Revision, error) {
+	var rows *sql.Rows
+	var err error
+
+	if targetPath != "" {
+		rows, err = db.conn.Query(`
+			SELECT id, proposal_id, target_path, original_content, original_hash, applied_at_unix
+			FROM proposal_revisions
+			WHERE target_path = ?
+			ORDER BY applied_at_unix DESC, id DESC;
+		`, targetPath)
+	} else {
+		rows, err = db.conn.Query(`
+			SELECT id, proposal_id, target_path, original_content, original_hash, applied_at_unix
+			FROM proposal_revisions
+			ORDER BY applied_at_unix DESC, id DESC;
+		`)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list revisions: %w", err)
+	}
+	defer rows.Close()
+
+	var revisions []*Revision
+	for rows.Next() {
+		var rev Revision
+		var appliedUnix int64
+		if err := rows.Scan(&rev.ID, &rev.ProposalID, &rev.TargetPath, &rev.OriginalContent, &rev.OriginalHash, &appliedUnix); err != nil {
+			return nil, fmt.Errorf("failed to scan revision: %w", err)
+		}
+		rev.AppliedAt = time.Unix(appliedUnix, 0).UTC()
+		revisions = append(revisions, &rev)
+	}
+
+	return revisions, rows.Err()
+}
+
+// GetRevision retrieves a specific historical revision by its ID.
+func (db *DB) GetRevision(id int64) (*Revision, error) {
+	row := db.conn.QueryRow(`
+		SELECT id, proposal_id, target_path, original_content, original_hash, applied_at_unix
+		FROM proposal_revisions
+		WHERE id = ?;
+	`, id)
+
+	var rev Revision
+	var appliedUnix int64
+	if err := row.Scan(&rev.ID, &rev.ProposalID, &rev.TargetPath, &rev.OriginalContent, &rev.OriginalHash, &appliedUnix); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get revision %d: %w", id, err)
+	}
+	rev.AppliedAt = time.Unix(appliedUnix, 0).UTC()
+	return &rev, nil
 }

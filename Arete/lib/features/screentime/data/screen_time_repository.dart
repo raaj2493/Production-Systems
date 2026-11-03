@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../focus/data/focus_shield_service.dart';
 import '../domain/app_category_model.dart';
+import '../domain/digital_wellbeing_model.dart';
 import '../domain/screen_time_status_model.dart';
 
 class ScreenTimeRepository {
@@ -97,30 +98,125 @@ class ScreenTimeRepository {
     return ScreenTimeStatus(isMonitoring: isMonitoring);
   }
 
-  /// Load all launchable apps with categorized status
+  /// Query full Digital Wellbeing statistics directly matching Android OS framework
+  Future<DigitalWellbeingStats> getDigitalWellbeingStats() async {
+    if (!isAndroid) {
+      return const DigitalWellbeingStats(
+        totalScreenTimeMinutes: 185,
+        productiveMinutes: 120,
+        distractionMinutes: 45,
+        neutralMinutes: 20,
+        deviceUnlockCount: 42,
+        notificationCount: 68,
+        shortFormBlockedCount: 5,
+        isShortFormBlockingEnabled: true,
+        remainingQuickPassSeconds: 0,
+        currentPackage: 'com.arete.app.arete',
+        currentAppName: 'Areté',
+        appDetails: [
+          AppUsageDetail(
+            packageName: 'com.google.android.youtube',
+            appName: 'YouTube',
+            minutes: 45,
+            category: AppCategory.distraction,
+            launches: 14,
+          ),
+          AppUsageDetail(
+            packageName: 'com.arete.app.arete',
+            appName: 'Areté',
+            minutes: 40,
+            category: AppCategory.productive,
+            launches: 9,
+          ),
+          AppUsageDetail(
+            packageName: 'com.slack',
+            appName: 'Slack',
+            minutes: 35,
+            category: AppCategory.productive,
+            launches: 16,
+          ),
+        ],
+      );
+    }
+
+    try {
+      final Map<dynamic, dynamic>? map =
+          await _channel.invokeMethod<Map<dynamic, dynamic>>('getDigitalWellbeingStats');
+      if (map != null && map.isNotEmpty) {
+        final installedApps = await _shieldService.getInstalledApps();
+        final iconsMap = <String, Uint8List?>{
+          for (final a in installedApps) a.packageName: a.iconBytes,
+        };
+        return DigitalWellbeingStats.fromMap(map, icons: iconsMap);
+      }
+    } catch (e) {
+      debugPrint('ScreenTimeRepository: getDigitalWellbeingStats error: $e');
+    }
+
+    return const DigitalWellbeingStats();
+  }
+
+  /// Grant Quick Pass for short form content (YouTube Shorts / Instagram Reels)
+  Future<void> grantQuickPass(int minutes) async {
+    await _shieldService.grantQuickPass(minutes);
+  }
+
+  /// Revoke Quick Pass
+  Future<void> clearQuickPass() async {
+    await _shieldService.clearQuickPass();
+  }
+
+  /// Toggle short-form loop blocking
+  Future<void> setShortFormBlocking(bool enabled) async {
+    await _shieldService.setShortFormBlockingEnabled(enabled);
+  }
+
+  /// Query per-package daily screen time in minutes
+  Future<Map<String, int>> getAppUsageMap() async {
+    if (!isAndroid) return {};
+    try {
+      final Map<dynamic, dynamic>? map =
+          await _channel.invokeMethod<Map<dynamic, dynamic>>('getAppUsageMap');
+      if (map != null) {
+        return map.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+      }
+    } catch (e) {
+      debugPrint('ScreenTimeRepository: getAppUsageMap error: $e');
+    }
+    return {};
+  }
+
+  /// Load all launchable apps with categorized status and actual daily screen time
   Future<List<MonitoredApp>> getMonitoredApps() async {
     final installedApps = await _shieldService.getInstalledApps();
     final categoriesMap = await getAppCategoriesMap();
+    final usageMap = await getAppUsageMap();
 
     if (installedApps.isEmpty) {
       // Return representative demo apps when on non-android or no apps returned
       return _getDefaultDemoApps(categoriesMap);
     }
 
-    return installedApps.map((app) {
+    final list = installedApps.map((app) {
       final customCatStr = categoriesMap[app.packageName];
       final category = customCatStr != null
           ? AppCategory.fromString(customCatStr)
           : classifyAppAutomatically(app.packageName, app.appName);
+      final usageMins = usageMap[app.packageName] ?? 0;
 
       return MonitoredApp(
         packageName: app.packageName,
         appName: app.appName,
         category: category,
+        dailyScreenTimeMinutes: usageMins,
         iconBytes: app.iconBytes,
         isSystemApp: app.isSystemApp,
       );
     }).toList();
+
+    // Sort by daily usage minutes descending so actively used apps appear first
+    list.sort((a, b) => b.dailyScreenTimeMinutes.compareTo(a.dailyScreenTimeMinutes));
+    return list;
   }
 
   /// Update single app category and sync to native preferences

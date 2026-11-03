@@ -4,6 +4,7 @@ import '../../../core/database/database_service.dart';
 import '../../../core/database/tables.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../goals/data/goal_repository.dart';
+import '../../notifications/data/notification_providers.dart';
 import '../../reminders/data/reminder_repository.dart';
 import '../domain/task_model.dart';
 
@@ -151,22 +152,35 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     }
   }
 
+  void _syncAlerts() {
+    try {
+      final notifService = _ref.read(notificationServiceProvider);
+      final notifPrefs = _ref.read(notificationPreferencesProvider);
+      state.whenData((tasks) {
+        notifService.syncTasksAlerts(tasks, notifPrefs);
+      });
+    } catch (_) {}
+  }
+
   Future<void> addTask(Task task) async {
     await _repository.createTask(task);
     await loadTasks();
     _ref.invalidate(goalsProvider);
+    _syncAlerts();
   }
 
   Future<void> updateTask(Task task) async {
     await _repository.updateTask(task);
     await loadTasks();
     _ref.invalidate(goalsProvider);
+    _syncAlerts();
   }
 
   Future<void> toggleTask(String id) async {
     await _repository.toggleTaskCompletion(id);
     await loadTasks();
     _ref.invalidate(goalsProvider);
+    _syncAlerts();
   }
 
   Future<void> deleteTask(String id) async {
@@ -174,6 +188,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     await ReminderRepository().deleteRemindersForTarget('task', id);
     await loadTasks();
     _ref.invalidate(goalsProvider);
+    _syncAlerts();
   }
 }
 

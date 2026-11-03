@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/app_settings_provider.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/arete_check_circle.dart';
@@ -18,12 +17,8 @@ import '../../tasks/data/task_repository.dart';
 import '../../tasks/domain/task_model.dart';
 import '../../tasks/presentation/task_form_sheet.dart';
 import '../../settings/presentation/data_backup_sheet.dart';
-import '../../settings/presentation/notification_preference_sheet.dart';
 import '../../settings/presentation/prompt_generator_sheet.dart';
 import '../../notifications/data/notification_providers.dart';
-import '../../screentime/data/screen_time_providers.dart';
-import '../../screentime/domain/screen_time_status_model.dart';
-import '../../screentime/domain/app_category_model.dart';
 import '../../progress/data/consistency_matrix_provider.dart';
 import '../../progress/domain/daily_consistency_model.dart';
 import 'widgets/consistency_matrix_card.dart';
@@ -55,6 +50,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
       ref.read(notificationPreferencesProvider.notifier).processPendingShadeActions();
       _checkNotificationPermission();
 
+      // Ensure active habits and tasks are synced to native background AlarmManager
+      final notifPrefs = ref.read(notificationPreferencesProvider);
+      ref.read(habitsProvider).whenData((habits) {
+        ref.read(notificationServiceProvider).syncHabitsReminders(habits, notifPrefs);
+      });
+      ref.read(tasksProvider).whenData((tasks) {
+        ref.read(notificationServiceProvider).syncTasksAlerts(tasks, notifPrefs);
+      });
+
       // Check if user has completed interactive onboarding tour
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
@@ -78,7 +82,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(notificationPreferencesProvider.notifier).processPendingShadeActions();
-      ref.read(screenTimeStatusProvider.notifier).refresh();
       _checkInitialNotificationAction();
       _refreshNotificationPermission();
     }
@@ -146,7 +149,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     final completedSessionsAsync = ref.watch(todayCompletedFocusSessionsProvider);
     final timerState = ref.watch(focusTimerProvider);
     final velocityStats = ref.watch(taskVelocityStatsProvider);
-    final screenTimeStatus = ref.watch(screenTimeStatusProvider);
     final consistencySummaryAsync = ref.watch(consistencyMatrixProvider);
 
     const targetSessionsGoal = 3;
@@ -245,7 +247,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
             ref.invalidate(todayFocusSecondsProvider);
             ref.invalidate(todayCompletedFocusSessionsProvider);
             ref.invalidate(consistencyMatrixProvider);
-            ref.read(screenTimeStatusProvider.notifier).refresh();
           },
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -256,11 +257,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                 const SizedBox(height: 14),
               ],
 
-              // 0. Live Screen Time Status Banner (if monitoring is active)
-              if (screenTimeStatus.isMonitoring) ...[
-                _buildScreenTimeLiveBanner(context, screenTimeStatus),
-                const SizedBox(height: 16),
-              ],
 
               // 1. Top Hero Section: Horizontal Carousel of Slidable Feature Cards
               _buildHeroSnapCarousel(
@@ -401,10 +397,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B201C) : const Color(0xFFFAF9F4),
+        color: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? const Color(0xFF3B483D) : const Color(0xFFE2DDD3),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
@@ -547,10 +545,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2821) : const Color(0xFFF1F6F2),
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                  : theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark ? const Color(0xFF2E4534) : const Color(0xFFD2E8D4),
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
                 width: 1.2,
               ),
             ),
@@ -562,10 +562,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                        color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.edit_note_rounded, size: 20, color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623)),
+                      child: Icon(
+                        Icons.edit_note_rounded,
+                        size: 20,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -577,7 +581,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? const Color(0xFFE2F1E4) : const Color(0xFF1B3623),
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -585,7 +589,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                             'Add your priority actions and daily rituals step-by-step.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.white60 : const Color(0xFF4A554E),
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -671,6 +675,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     required int totalFocusMinutes,
     required int liveFocusSeconds,
   }) {
+    final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -728,8 +733,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
               height: 6,
               decoration: BoxDecoration(
                 color: isActive
-                    ? (isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35))
-                    : (isDark ? Colors.white24 : const Color(0xFFDDD7CC)),
+                    ? theme.colorScheme.primary
+                    : (isDark
+                        ? Colors.white24
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(3),
               ),
             );
@@ -778,12 +785,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E231F) : const Color(0xFFF4F1EA),
+        color: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE2DDD3),
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
@@ -814,17 +821,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF283B2F)
-                              : const Color(0xFFD2E8D4),
+                          color: theme.colorScheme.primaryContainer,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.bolt_rounded,
                           size: 18,
-                          color: isDark
-                              ? const Color(0xFFD2E8D4)
-                              : const Color(0xFF1B3623),
+                          color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -845,9 +848,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         child: Icon(
                           Icons.tune_rounded,
                           size: 16,
-                          color: isDark
-                              ? const Color(0xFF9CD4A6).withValues(alpha: 0.8)
-                              : const Color(0xFF2A4E35).withValues(alpha: 0.7),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -867,12 +868,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF283B2F) : const Color(0xFFE2F1E4),
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.45 : 0.65),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF86D99B).withValues(alpha: 0.5)
-                          : const Color(0xFF2A4E35).withValues(alpha: 0.3),
+                      color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.4 : 0.2),
                       width: 1,
                     ),
                   ),
@@ -882,7 +881,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                       Icon(
                         Icons.schedule_rounded,
                         size: 13,
-                        color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                        color: theme.colorScheme.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -890,7 +889,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
@@ -918,12 +917,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                       size: const Size(122, 122),
                       painter: _CircularFocusRingPainter(
                         progress: progress,
-                        trackColor: isDark
-                            ? const Color(0xFF283B2F)
-                            : const Color(0xFFE2F1E4),
-                        progressColor: isDark
-                            ? const Color(0xFF9CD4A6)
-                            : const Color(0xFF2A4E35),
+                        trackColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.35 : 0.5),
+                        progressColor: theme.colorScheme.primary,
                         strokeWidth: 15.0,
                       ),
                     ),
@@ -936,7 +931,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                             fontSize: 27,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.8,
-                            color: isDark ? const Color(0xFFE2E4DE) : const Color(0xFF191C19),
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 1),
@@ -953,7 +948,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                                 letterSpacing: 0.1,
                                 color: isDark
                                     ? Colors.white.withValues(alpha: 0.75)
-                                    : const Color(0xFF3B5643),
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -981,8 +976,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                       ),
                       style: FilledButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-                        foregroundColor: isDark ? const Color(0xFF101C14) : Colors.white,
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
@@ -1018,8 +1013,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                       ),
                       style: FilledButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-                        foregroundColor: isDark ? const Color(0xFF101C14) : Colors.white,
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
@@ -1056,8 +1051,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                     ),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF9CD4A6) : const Color(0xFF2A4E35),
-                    foregroundColor: isDark ? const Color(0xFF101C14) : Colors.white,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     elevation: 0,
@@ -1089,12 +1084,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E231F) : const Color(0xFFF4F1EA),
+        color: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE2DDD3),
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
@@ -1122,17 +1117,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF382A4C)
-                            : const Color(0xFFE8DEF8),
+                        color: theme.colorScheme.secondaryContainer,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.repeat_rounded,
                         size: 18,
-                        color: isDark
-                            ? const Color(0xFFE8DEF8)
-                            : const Color(0xFF382A4C),
+                        color: theme.colorScheme.onSecondaryContainer,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1151,7 +1142,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                        color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -1159,7 +1150,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                          color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
@@ -1217,10 +1208,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF252C27) : const Color(0xFFFAF8F5),
+                      color: isDark
+                          ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+                          : theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? Colors.white10 : const Color(0xFFE2DDD3),
+                        color: isDark
+                            ? Colors.white10
+                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                         width: 1.0,
                       ),
                     ),
@@ -1324,12 +1319,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E231F) : const Color(0xFFF4F1EA),
+        color: isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE2DDD3),
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
@@ -1387,17 +1382,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF252C27)
-                      : const Color(0xFFE6E0D5),
+                  color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
+                child: Text(
                   '🔥 Active Pace',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFFFF7A59),
+                    color: theme.colorScheme.secondary,
                   ),
                 ),
               ),
@@ -1411,10 +1404,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.45 : 0.65),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF86D99B).withValues(alpha: 0.3) : const Color(0xFF2A4E35).withValues(alpha: 0.2),
+                      color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.35 : 0.2),
                     ),
                   ),
                   child: Column(
@@ -1425,7 +1418,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                          color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(height: 1),
@@ -1434,7 +1427,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
@@ -1482,14 +1475,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
           // Mini Velocity Bar & Motto
           Row(
             children: [
-              Icon(Icons.speed_rounded, size: 14, color: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35)),
+              Icon(Icons.speed_rounded, size: 14, color: theme.colorScheme.primary),
               const SizedBox(width: 6),
               Text(
                 '${(velocityStats.completionRate * 100).toInt()}% Task Velocity',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                  color: theme.colorScheme.primary,
                 ),
               ),
               Flexible(
@@ -1544,9 +1537,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF283B2F)
-                          : const Color(0xFFD2E8D4),
+                      color: theme.colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -1554,7 +1545,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                        color: theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -1589,11 +1580,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                 child: LinearProgressIndicator(
                   value: velocityStats.totalToday > 0 ? velocityStats.completionRate : 0.0,
                   minHeight: 5,
-                  backgroundColor: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFE2DDD3),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                    theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -1609,7 +1598,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                   ),
@@ -1713,7 +1702,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: task.goalColor != null
-                                                ? Color(int.tryParse('0xFF${task.goalColor!.replaceAll("#", "")}') ?? 0xFF2A4E35).withValues(alpha: 0.15)
+                                                ? Color(int.tryParse('0xFF${task.goalColor!.replaceAll("#", "")}') ?? theme.colorScheme.primary.toARGB32()).withValues(alpha: 0.15)
                                                 : theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
                                             borderRadius: BorderRadius.circular(8),
                                           ),
@@ -1725,7 +1714,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
                                               color: task.goalColor != null
-                                                ? Color(int.tryParse('0xFF${task.goalColor!.replaceAll("#", "")}') ?? 0xFF2A4E35)
+                                                ? Color(int.tryParse('0xFF${task.goalColor!.replaceAll("#", "")}') ?? theme.colorScheme.primary.toARGB32())
                                                 : theme.colorScheme.primary,
                                             ),
                                           ),
@@ -1866,91 +1855,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with WidgetsBindingOb
     );
   }
 
-  Widget _buildScreenTimeLiveBanner(BuildContext context, ScreenTimeStatus status) {
-    final theme = Theme.of(context);
-    final isDistraction = status.category == AppCategory.distraction;
-    final isProductive = status.category == AppCategory.productive;
 
-    final bannerBg = isDistraction
-        ? const Color(0xFFFFDDB3).withValues(alpha: 0.6)
-        : (isProductive
-            ? AppColors.sagePrimaryContainer.withValues(alpha: 0.7)
-            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5));
-    final borderColor = isDistraction
-        ? const Color(0xFFFF7A59).withValues(alpha: 0.5)
-        : (isProductive ? AppColors.sageOnPrimaryContainer.withValues(alpha: 0.3) : Colors.transparent);
-    final iconColor = isDistraction
-        ? const Color(0xFFC04E00)
-        : (isProductive ? AppColors.sageOnPrimaryContainer : theme.colorScheme.primary);
-
-    return InkWell(
-      onTap: () => NotificationPreferenceSheet.show(context),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: bannerBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 1.2),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isDistraction
-                  ? Icons.warning_amber_rounded
-                  : (isProductive ? Icons.track_changes_rounded : Icons.screen_lock_portrait_rounded),
-              size: 20,
-              color: iconColor,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Screen Time: ${status.formattedTotalScreenTime}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                      ),
-                      if (status.currentAppName.isNotEmpty) ...[
-                        const Text(' • ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Flexible(
-                          child: Text(
-                            'Active: ${status.currentAppName} (${status.formattedCurrentAppTime})',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isDistraction ? FontWeight.w800 : FontWeight.w600,
-                              color: isDistraction ? const Color(0xFFC04E00) : theme.colorScheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  Text(
-                    isDistraction
-                        ? 'Distraction app active • Tap to configure limit alerts'
-                        : (isProductive
-                            ? 'Deep focus momentum • Productive tool active'
-                            : 'Live digital wellness tracker active'),
-                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, size: 18),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 

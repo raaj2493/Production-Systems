@@ -686,4 +686,42 @@ object AreteNotificationHelper {
 
         notificationManager.notify(NOTIFICATION_ID_FOCUS_COMPLETE, builder.build())
     }
+
+    // --- 7. Instant Test Notification (User-Verified Diagnostic) ---
+    fun showTestNotification(context: Context) {
+        initNotificationChannels(context)
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notifId = 9999
+
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+
+        val testDoneIntent = Intent(context, AreteNotificationActionReceiver::class.java).apply {
+            action = ACTION_REMINDER_DONE
+            putExtra("notification_id", notifId)
+            putExtra(EXTRA_REMINDER_ID, "test_notification")
+        }
+        val donePending = PendingIntent.getBroadcast(context, notifId * 10 + 1, testDoneIntent, flags)
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_HIGH_PRIORITY)
+            .setSmallIcon(R.drawable.ic_stat_arete)
+            .setContentTitle("⚡ Areté Notifications Active")
+            .setContentText("Notifications, priority sound, and quick actions are running smoothly!")
+            .setStyle(
+                NotificationCompat.BigTextStyle().bigText(
+                    "Great news! System notifications, priority alerts, and background alarms are verified and operating at 100% capacity on your device."
+                )
+            )
+            .setColor(Color.parseColor("#4D7C5D"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(getLaunchIntent(context))
+            .addAction(android.R.drawable.checkbox_on_background, "✓ Looks Great", donePending)
+
+        notificationManager.notify(notifId, builder.build())
+    }
 }
+

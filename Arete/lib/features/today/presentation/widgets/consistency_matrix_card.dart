@@ -8,25 +8,33 @@ import '../../../progress/domain/daily_consistency_model.dart';
 class ConsistencyMatrixCard extends ConsumerWidget {
   const ConsistencyMatrixCard({super.key});
 
-  Color _getCellColor(int level, bool isDark) {
+  Color _getCellColor(BuildContext context, int level, bool isDark) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final primaryContainer = theme.colorScheme.primaryContainer;
+    final surfaceContainer = theme.colorScheme.surfaceContainerHighest;
+
     switch (level) {
-      case 4: // 120m+
-        return isDark ? const Color(0xFF86D99B) : const Color(0xFF1B3623);
+      case 4: // 120m+ (peak momentum)
+        return primary;
       case 3: // 60m+
-        return isDark ? const Color(0xFF457A56) : const Color(0xFF4D7C5D);
+        return primary.withValues(alpha: isDark ? 0.78 : 0.82);
       case 2: // 30m+
-        return isDark ? const Color(0xFF2E4D38) : const Color(0xFFD2E8D4);
-      case 1: // 1-29m or habit/task
-        return isDark ? const Color(0xFF23362A) : const Color(0xFFE2F1E4);
+        return isDark
+            ? primary.withValues(alpha: 0.48)
+            : primaryContainer;
+      case 1: // 1-29m or habit/task done
+        return isDark
+            ? primary.withValues(alpha: 0.25)
+            : primaryContainer.withValues(alpha: 0.55);
       case 0: // 0m
       default:
-        return isDark ? const Color(0xFF252C27) : const Color(0xFFE6E1D6);
+        return surfaceContainer.withValues(alpha: isDark ? 0.35 : 0.55);
     }
   }
 
   void _showDayDetails(BuildContext context, DailyConsistency day) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final dateFormatted = DateFormat('EEEE, MMM d, y').format(day.date);
 
     AreteBottomSheet.show(
@@ -48,7 +56,7 @@ class ConsistencyMatrixCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF283B2F) : const Color(0xFFD2E8D4),
+                  color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -56,7 +64,7 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? const Color(0xFFD2E8D4) : const Color(0xFF1B3623),
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
               ),
@@ -68,17 +76,17 @@ class ConsistencyMatrixCard extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1B201D) : const Color(0xFFF4F1EA),
+              color: theme.colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? Colors.white12 : const Color(0xFFE2DDD3),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
               ),
             ),
             child: Column(
               children: [
                 _buildMetricRow(
                   icon: Icons.bolt_rounded,
-                  iconColor: const Color(0xFFFF7A59),
+                  iconColor: theme.colorScheme.secondary,
                   label: 'Deep Work Focused',
                   value: day.formattedFocusTime,
                   context: context,
@@ -86,7 +94,7 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                 const Divider(height: 20),
                 _buildMetricRow(
                   icon: Icons.repeat_rounded,
-                  iconColor: isDark ? const Color(0xFF86D99B) : const Color(0xFF2A4E35),
+                  iconColor: theme.colorScheme.primary,
                   label: 'Habits Completed',
                   value: '${day.habitsCompleted} completed',
                   context: context,
@@ -94,7 +102,7 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                 const Divider(height: 20),
                 _buildMetricRow(
                   icon: Icons.check_circle_rounded,
-                  iconColor: isDark ? const Color(0xFFFFB77D) : const Color(0xFF5A2D00),
+                  iconColor: theme.colorScheme.tertiary,
                   label: 'Action Items Cleared',
                   value: '${day.tasksCompleted} tasks done',
                   context: context,
@@ -174,12 +182,14 @@ class ConsistencyMatrixCard extends ConsumerWidget {
 
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E231F) : const Color(0xFFF4F1EA),
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFFE2DDD3),
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
               width: 1.0,
             ),
             boxShadow: [
@@ -207,17 +217,13 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF283B2F)
-                                : const Color(0xFFD2E8D4),
+                            color: theme.colorScheme.primaryContainer,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.grid_view_rounded,
                             size: 15,
-                            color: isDark
-                                ? const Color(0xFFD2E8D4)
-                                : const Color(0xFF1B3623),
+                            color: theme.colorScheme.onPrimaryContainer,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -240,19 +246,17 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF252C27)
-                            : const Color(0xFFEAE5DB),
+                        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         streakLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFFFF7A59),
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ),
@@ -275,7 +279,7 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                         }
 
                         final day = summary.days[itemIndex];
-                        final cellColor = _getCellColor(day.intensityLevel, isDark);
+                        final cellColor = _getCellColor(context, day.intensityLevel, isDark);
                         final isToday = day.isToday;
 
                         return Expanded(
@@ -358,13 +362,13 @@ class ConsistencyMatrixCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      _buildLegendBox(_getCellColor(0, isDark), isDark),
+                      _buildLegendBox(_getCellColor(context, 0, isDark), isDark),
                       const SizedBox(width: 3),
-                      _buildLegendBox(_getCellColor(2, isDark), isDark),
+                      _buildLegendBox(_getCellColor(context, 2, isDark), isDark),
                       const SizedBox(width: 3),
-                      _buildLegendBox(_getCellColor(3, isDark), isDark),
+                      _buildLegendBox(_getCellColor(context, 3, isDark), isDark),
                       const SizedBox(width: 3),
-                      _buildLegendBox(_getCellColor(4, isDark), isDark),
+                      _buildLegendBox(_getCellColor(context, 4, isDark), isDark),
                       const SizedBox(width: 4),
                       Text(
                         '120m+',

@@ -453,9 +453,7 @@ class FocusScreen extends ConsumerWidget {
                               isExpanded: true,
                               value: dropdownValue,
                               borderRadius: BorderRadius.circular(16),
-                              dropdownColor: theme.brightness == Brightness.dark
-                                  ? const Color(0xFF252B27)
-                                  : const Color(0xFFFAF7F2),
+                              dropdownColor: theme.colorScheme.surfaceContainer,
                               elevation: 6,
                               icon: Icon(
                                 Icons.keyboard_arrow_down_rounded,
@@ -1094,34 +1092,83 @@ class FocusScreen extends ConsumerWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: soundOptions.map((opt) {
-              final isSelected = soundState.activeSound == opt['type'];
-              return InkWell(
+            children: [
+              ...soundOptions.map((opt) {
+                final isSelected = soundState.activeSound == opt['type'];
+                return InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => soundController.selectSoundscape(opt['type'] as String),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primaryContainer
+                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(opt['icon'] as String, style: const TextStyle(fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Text(
+                          opt['label'] as String,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? theme.colorScheme.onPrimaryContainer
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+
+              // Custom Audio Track Option
+              InkWell(
                 borderRadius: BorderRadius.circular(20),
-                onTap: () => soundController.selectSoundscape(opt['type'] as String),
+                onTap: () async {
+                  if (soundState.customTrackPath != null) {
+                    soundController.selectSoundscape('custom');
+                  } else {
+                    final picked = await soundController.pickCustomAudioFile();
+                    if (!picked && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No audio file selected')),
+                      );
+                    }
+                  }
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: isSelected
+                    color: soundState.isCustom
                         ? theme.colorScheme.primaryContainer
                         : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                      color: soundState.isCustom ? theme.colorScheme.primary : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(opt['icon'] as String, style: const TextStyle(fontSize: 14)),
+                      const Text('🎵', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       Text(
-                        opt['label'] as String,
+                        soundState.customTrackName != null ? 'My Music' : '+ Custom Music',
                         style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected
+                          fontWeight: soundState.isCustom ? FontWeight.w700 : FontWeight.w500,
+                          color: soundState.isCustom
                               ? theme.colorScheme.onPrimaryContainer
                               : theme.colorScheme.onSurfaceVariant,
                         ),
@@ -1129,9 +1176,46 @@ class FocusScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           ),
+          if (soundState.isCustom && soundState.customTrackName != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.music_note_rounded, size: 16, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      soundState.customTrackName!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => soundController.pickCustomAudioFile(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Change', style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (soundState.isPlaying) ...[
             const SizedBox(height: 12),
             Row(
